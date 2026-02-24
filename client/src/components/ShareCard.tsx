@@ -137,8 +137,8 @@ export function ShareCard({
 
     ctx.fillStyle = "rgba(139, 69, 19, 0.4)";
     ctx.font = "400 14px 'Noto Sans TC', sans-serif";
-    ctx.fillText("\u77F3\u9580\u570B\u5C0F 2026 \u5143\u5BB5\u7BC0\u731C\u71C8\u8B0E\u6D3B\u52D5", w / 2, h - 40);
-    ctx.fillText("學務處即將進行猜謎活動 3/3（二）", w / 2, h - 18);
+    ctx.fillText("石門國小 2026 元宵猜燈謎網站", w / 2, h - 40);
+    ctx.fillText("學務處將舉行猜燈謎活動 🧧✨🏮", w / 2, h - 18);
 
     const dataUrl = canvas.toDataURL("image/png");
     setImageUrl(dataUrl);

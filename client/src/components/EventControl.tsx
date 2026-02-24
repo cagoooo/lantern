@@ -145,7 +145,7 @@ export function EventControl({ open, onClose }: EventControlProps) {
       <DialogContent className="sm:max-w-md bg-[#FFF8E7] border-2 border-[#FFD700] rounded-2xl p-5">
         <DialogTitle className="sr-only">活動資訊</DialogTitle>
         <DialogDescription className="sr-only">
-          查看石門國小元宵猜燈謎活動的時間、地點與 QR Code 資訊。
+          查看石門國小元宵猜燈謎網站的活動時間、地點與 QR Code 資訊。
         </DialogDescription>
         <div className="space-y-4">
           <div className="flex items-center justify-between">
