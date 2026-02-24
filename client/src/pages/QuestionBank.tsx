@@ -7,7 +7,7 @@ import {
   Lock, ArrowLeft, Plus, Pencil, Trash2, Save,
   X, Loader2, BookOpen,
 } from "lucide-react";
-import { getRiddles, verifyTeacherCode } from "@/lib/gameStore";
+import { getRiddles, isTeacherAuthenticated, loginTeacher } from "@/lib/gameStore";
 import { riddles as staticRiddles } from "@/lib/riddles";
 import { Link } from "wouter";
 
@@ -23,8 +23,9 @@ interface RiddleForm {
 }
 
 export default function QuestionBank() {
-  const [authenticated, setAuthenticated] = useState(false);
-  const [code, setCode] = useState("");
+  const [authenticated, setAuthenticated] = useState(isTeacherAuthenticated());
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [editing, setEditing] = useState<number | null>(null);
   const [adding, setAdding] = useState(false);
@@ -43,16 +44,17 @@ export default function QuestionBank() {
   }, []);
 
   const handleLogin = async () => {
+    if (!email.trim() || !password.trim()) return;
     try {
-      const isOk = await verifyTeacherCode(code.trim());
-      if (isOk) {
-        setAuthenticated(true);
-        setError("");
+      await loginTeacher(email.trim(), password.trim());
+      setAuthenticated(true);
+      setError("");
+    } catch (err: any) {
+      if (err.code === "auth/user-not-found" || err.code === "auth/wrong-password" || err.code === "auth/invalid-credential") {
+        setError("帳號或密碼錯誤");
       } else {
-        setError("密碼錯誤");
+        setError("登入失敗，請確認 Firebase 帳號");
       }
-    } catch {
-      setError("發生錯誤");
     }
   };
 
@@ -90,20 +92,27 @@ export default function QuestionBank() {
             <p className="text-white/70 text-sm">請輸入教師密碼</p>
           </div>
           <div className="p-5 space-y-4">
-            <Input
-              type="password"
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              placeholder="請輸入密碼"
-              className="h-12 rounded-xl border-2 border-[#E8D5B7] text-base"
-              data-testid="input-teacher-code-qb"
-              onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-            />
+            <div className="space-y-3">
+              <Input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="管理員 Email"
+                className="h-12 rounded-xl border-2 border-[#E8D5B7] text-base"
+              />
+              <Input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="請輸入密碼"
+                className="h-12 rounded-xl border-2 border-[#E8D5B7] text-base"
+                onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+              />
+            </div>
             {error && <p className="text-sm text-red-500">{error}</p>}
             <Button
               onClick={handleLogin}
               className="w-full h-12 rounded-xl bg-[#E60012] text-white font-bold"
-              data-testid="button-teacher-login-qb"
             >
               登入
             </Button>
