@@ -553,11 +553,13 @@ export default function Home() {
             </Link>
           </div>
 
-          <div className="text-center pt-4 pb-2">
-            <div className="inline-flex items-center gap-2 text-[#8B4513]/40 text-sm">
-              <CloudIcon />
-              <span>石門國小 2026 元宵節</span>
-              <CloudIcon />
+          <div className="text-center pt-6 pb-2">
+            <div className="flex items-center justify-center gap-4 text-2xl animate-bounce-slow">
+              <span>🧧</span>
+              <FestiveLantern />
+              <span>🏮</span>
+              <FestiveLantern />
+              <span>✨</span>
             </div>
           </div>
         </main>
@@ -569,7 +571,7 @@ export default function Home() {
             <span className="text-xl">🎆</span>
           </div>
           <p className="text-sm text-[#8B4513]/60">
-            © 2026 石門國小元宵猜燈謎活動 🏮{" "}
+            © 2026 石門國小元宵猜燈謎網站 🏮{" "}
             <a
               href="https://www.smes.tyc.edu.tw/modules/tadnews/page.php?ncsn=11&nsn=16#a5"
               target="_blank"
@@ -649,6 +651,18 @@ function LanternIcon() {
       >
         燈
       </text>
+    </svg>
+  );
+}
+
+function FestiveLantern() {
+  return (
+    <svg width="24" height="32" viewBox="0 0 40 60" className="drop-shadow-sm">
+      <rect x="18" y="0" width="4" height="8" fill="#FFD700" />
+      <ellipse cx="20" cy="30" rx="16" ry="20" fill="#E60012" />
+      <path d="M4,30 Q20,10 36,30 Q20,50 4,30" fill="none" stroke="#FFD700" strokeWidth="1" opacity="0.3" />
+      <rect x="15" y="50" width="10" height="4" fill="#FFD700" />
+      <line x1="20" y1="54" x2="20" y2="60" stroke="#FF6B6B" strokeWidth="2" />
     </svg>
   );
 }
