@@ -1,18 +1,26 @@
-import { sql } from "drizzle-orm";
-import { pgTable, text, varchar } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
+export const riddleSchema = z.object({
+  id: z.number(),
+  question: z.string(),
+  hint: z.string(),
 });
 
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
+export const riddleWithAnswersSchema = riddleSchema.extend({
+  answers: z.array(z.string()),
 });
 
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = typeof users.$inferSelect;
+export const answerSubmissionSchema = z.object({
+  answer: z.string().min(1, "Answer is required"),
+});
+
+export type Riddle = z.infer<typeof riddleSchema>;
+export type RiddleWithAnswers = z.infer<typeof riddleWithAnswersSchema>;
+export type AnswerSubmission = z.infer<typeof answerSubmissionSchema>;
+
+export interface GameState {
+  currentRiddleIndex: number;
+  solvedRiddles: number[];
+  attempts: Record<number, number>;
+  score: number;
+}
