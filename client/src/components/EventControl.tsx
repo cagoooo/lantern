@@ -24,7 +24,7 @@ export function EventControl({ open, onClose }: EventControlProps) {
 
   useEffect(() => {
     if (open) {
-      const url = window.location.origin;
+      const url = "https://cagoooo.github.io/lantern/";
       QRCode.toDataURL(url, {
         width: 280,
         margin: 2,
@@ -116,7 +116,7 @@ export function EventControl({ open, onClose }: EventControlProps) {
 
       ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
       ctx.font = "400 14px 'Noto Sans TC', sans-serif";
-      ctx.fillText(window.location.origin, w / 2, qrY + qrSize + 90);
+      ctx.fillText("https://cagoooo.github.io/lantern/", w / 2, qrY + qrSize + 90);
 
       const features = ["\u5341\u9053\u8DA3\u5473\u71C8\u8B0E", "\u5373\u6642\u8A08\u5206", "\u6311\u6230\u8A08\u6642", "\u6210\u7E3E\u5206\u4EAB"];
       ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
