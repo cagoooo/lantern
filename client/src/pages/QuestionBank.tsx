@@ -10,6 +10,7 @@ import {
 import { getRiddles, isTeacherAuthenticated, loginTeacher } from "@/lib/gameStore";
 import { riddles as staticRiddles } from "@/lib/riddles";
 import { Link } from "wouter";
+import { FestiveDecorations } from "@/components/FestiveUI";
 
 type PublicRiddle = { id: number; question: string; hint: string };
 
@@ -275,13 +276,9 @@ export default function QuestionBank() {
         )}
 
         <footer className="py-5 text-center mt-4">
-          <div className="flex items-center justify-center gap-3 mb-2">
-            <span className="text-lg">🏮</span>
-            <span className="text-lg">🐴</span>
-            <span className="text-lg">🎆</span>
-          </div>
-          <p className="text-sm text-[#8B4513]/60">
-            © 2026 石門國小元宵猜燈謎活動 🏮{" "}
+          <FestiveDecorations />
+          <p className="text-sm text-[#8B4513]/60 mt-3">
+            © 2026 石門國小元宵猜燈謎網站 🏮{" "}
             <a
               href="https://www.smes.tyc.edu.tw/modules/tadnews/page.php?ncsn=11&nsn=16#a5"
               target="_blank"

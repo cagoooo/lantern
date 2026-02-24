@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Trophy, Users, Swords, Loader2, Crown, RefreshCw } from "lucide-react";
 import { getClassLeaderboard } from "@/lib/gameStore";
 import { Link } from "wouter";
+import { FestiveDecorations } from "@/components/FestiveUI";
 
 export default function ClassBattle() {
   const [classData, setClassData] = useState<Record<string, { totalScore: number; count: number; avgScore: number }>>({});
@@ -149,13 +150,9 @@ export default function ClassBattle() {
         </div>
 
         <footer className="py-5 text-center mt-4">
-          <div className="flex items-center justify-center gap-3 mb-2">
-            <span className="text-lg">🏮</span>
-            <span className="text-lg">🐴</span>
-            <span className="text-lg">🎆</span>
-          </div>
-          <p className="text-sm text-[#8B4513]/60">
-            © 2026 石門國小元宵猜燈謎活動 🏮{" "}
+          <FestiveDecorations />
+          <p className="text-sm text-[#8B4513]/60 mt-3">
+            © 2026 石門國小元宵猜燈謎網站 🏮{" "}
             <a
               href="https://www.smes.tyc.edu.tw/modules/tadnews/page.php?ncsn=11&nsn=16#a5"
               target="_blank"

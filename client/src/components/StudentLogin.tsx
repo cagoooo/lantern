@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { GraduationCap, Loader2 } from "lucide-react";
 import { useLocation } from "wouter";
+import { FestiveDecorations } from "@/components/FestiveUI";
 
 interface StudentLoginProps {
   onLogin: (className: string, seatNumber: string, studentName: string) => Promise<void>;
@@ -174,13 +175,9 @@ export function StudentLogin({ onLogin }: StudentLoginProps) {
       </div>
 
       <footer className="py-4 px-6 text-center">
-        <div className="flex items-center justify-center gap-2 flex-wrap">
-          <span className="text-lg">🏮</span>
-          <span className="text-lg">🐴</span>
-          <span className="text-lg">🎆</span>
-        </div>
-        <p className="text-sm text-[#8B4513]/60 mt-1">
-          © 2026 石門國小元宵猜燈謎活動 🏮{" "}
+        <FestiveDecorations />
+        <p className="text-sm text-[#8B4513]/60 mt-3">
+          © 2026 石門國小元宵猜燈謎網站 🏮{" "}
           <a
             href="https://www.smes.tyc.edu.tw/modules/tadnews/page.php?ncsn=11&nsn=16#a5"
             target="_blank"
