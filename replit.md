@@ -6,8 +6,9 @@ Interactive web-based riddle guessing game (猜燈謎) for Shimen Elementary Sch
 ## Architecture
 - **Frontend**: React + Vite + TailwindCSS with Noto Sans TC font for Chinese text
 - **Backend**: Express.js API serving riddle data and answer validation
-- **Storage**: Client-side localStorage for game progress; no database needed
-- **No authentication**: Public game for school students
+- **Database**: Firebase Firestore for cloud game state persistence + localStorage fallback
+- **Auth**: Firebase Anonymous Auth (required by Firestore security rules)
+- **Security**: All Firebase config stored in environment variables (VITE_FIREBASE_*)
 
 ## Key Features
 - 10 riddles with server-side answer validation (answers not exposed to client)
@@ -35,9 +36,16 @@ Interactive web-based riddle guessing game (猜燈謎) for Shimen Elementary Sch
 - `client/src/components/ShareCard.tsx` - Canvas-based share card generator
 - `client/src/components/EventControl.tsx` - Event countdown and QR code poster
 - `client/src/lib/sounds.ts` - Web Audio API sound effects
+- `client/src/lib/firebase.ts` - Firebase initialization with env vars, anonymous auth
+- `client/src/lib/gameStore.ts` - Firestore game state CRUD + leaderboard
 - `client/src/hooks/use-shake.ts` - Device motion shake detection hook
 - `server/routes.ts` - API endpoints for riddle data and answer checking
 - `shared/schema.ts` - TypeScript types
+
+## Firebase Setup
+- Firestore collections: `gameStates` (per-user game progress), `scores` (leaderboard)
+- Security rules: `request.auth != null` (anonymous auth required)
+- All config in Replit Secrets: VITE_FIREBASE_API_KEY, VITE_FIREBASE_AUTH_DOMAIN, VITE_FIREBASE_PROJECT_ID, VITE_FIREBASE_STORAGE_BUCKET, VITE_FIREBASE_MESSAGING_SENDER_ID, VITE_FIREBASE_APP_ID
 
 ## API Endpoints
 - `GET /api/riddles` - Returns riddles without answers

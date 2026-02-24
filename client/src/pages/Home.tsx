@@ -17,6 +17,11 @@ import {
   startBgMusic,
   stopBgMusic,
 } from "@/lib/sounds";
+import {
+  loadGameState as loadFromFirestore,
+  saveGameState as saveToFirestore,
+  resetGameState as resetFirestore,
+} from "@/lib/gameStore";
 import type { GameState } from "@shared/schema";
 import {
   Sparkles,
@@ -36,22 +41,18 @@ interface PublicRiddle {
   hint: string;
 }
 
-const STORAGE_KEY = "shimen-riddle-game";
+const LOCAL_KEY = "shimen-riddle-game";
 
-function loadGameState(): GameState {
+function loadLocalState(): GameState {
   try {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = localStorage.getItem(LOCAL_KEY);
     if (saved) return JSON.parse(saved);
   } catch {}
   return { currentRiddleIndex: 0, solvedRiddles: [], attempts: {}, score: 0 };
 }
 
-function saveGameState(state: GameState) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-}
-
 export default function Home() {
-  const [gameState, setGameState] = useState<GameState>(loadGameState);
+  const [gameState, setGameState] = useState<GameState>(loadLocalState);
   const [showConfetti, setShowConfetti] = useState(false);
   const [confettiKey, setConfettiKey] = useState(0);
   const [showCompletion, setShowCompletion] = useState(false);
@@ -68,6 +69,7 @@ export default function Home() {
   const [showShareCard, setShowShareCard] = useState(false);
   const [showEventControl, setShowEventControl] = useState(false);
   const [shakeNotice, setShakeNotice] = useState(false);
+  const [firebaseLoaded, setFirebaseLoaded] = useState(false);
   const riddleListRef = useRef<HTMLDivElement>(null);
 
   const { data: riddles, isLoading } = useQuery<PublicRiddle[]>({
@@ -75,8 +77,18 @@ export default function Home() {
   });
 
   useEffect(() => {
-    saveGameState(gameState);
-  }, [gameState]);
+    loadFromFirestore().then((cloudState) => {
+      setGameState(cloudState);
+      setFirebaseLoaded(true);
+    }).catch(() => {
+      setFirebaseLoaded(true);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!firebaseLoaded) return;
+    saveToFirestore(gameState);
+  }, [gameState, firebaseLoaded]);
 
   const pickRandomUnsolved = useCallback(() => {
     if (!riddles) return;
@@ -166,6 +178,7 @@ export default function Home() {
     setGameState({ currentRiddleIndex: 0, solvedRiddles: [], attempts: {}, score: 0 });
     setSolvedAnswers({});
     setShowCompletion(false);
+    resetFirestore();
   }, []);
 
   const toggleSound = useCallback(() => {
