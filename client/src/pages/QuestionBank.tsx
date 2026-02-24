@@ -91,7 +91,13 @@ export default function QuestionBank() {
             <h2 className="text-xl font-bold text-white">題庫管理</h2>
             <p className="text-white/70 text-sm">請輸入教師密碼</p>
           </div>
-          <div className="p-5 space-y-4">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleLogin();
+            }}
+            className="p-5 space-y-4"
+          >
             <div className="space-y-3">
               <Input
                 type="email"
@@ -99,6 +105,7 @@ export default function QuestionBank() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="管理員 Email"
                 className="h-12 rounded-xl border-2 border-[#E8D5B7] text-base"
+                required
               />
               <Input
                 type="password"
@@ -106,12 +113,12 @@ export default function QuestionBank() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="請輸入密碼"
                 className="h-12 rounded-xl border-2 border-[#E8D5B7] text-base"
-                onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+                required
               />
             </div>
             {error && <p className="text-sm text-red-500">{error}</p>}
             <Button
-              onClick={handleLogin}
+              type="submit"
               className="w-full h-12 rounded-xl bg-[#E60012] text-white font-bold"
             >
               登入
@@ -122,7 +129,7 @@ export default function QuestionBank() {
                 返回遊戲
               </Button>
             </Link>
-          </div>
+          </form>
         </Card>
       </div>
     );

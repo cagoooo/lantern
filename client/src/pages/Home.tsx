@@ -334,7 +334,7 @@ export default function Home() {
             </div>
           </div>
           <img
-            src="/horse-mascot.png"
+            src="./horse-mascot.png"
             alt=""
             className="absolute bottom-6 right-2 w-14 h-14 sm:w-20 sm:h-20 opacity-30 select-none pointer-events-none"
           />
@@ -565,7 +565,7 @@ export default function Home() {
         <footer className="relative z-10 py-5 px-6 text-center border-t border-[#E8D5B7]/50 bg-gradient-to-t from-[#FFE0A0]/30 to-transparent">
           <div className="flex items-center justify-center gap-3 mb-2">
             <span className="text-xl">🏮</span>
-            <img src="/horse-mascot.png" alt="馬年吉祥物" className="w-10 h-10 object-contain" />
+            <img src="./horse-mascot.png" alt="馬年吉祥物" className="w-10 h-10 object-contain" />
             <span className="text-xl">🎆</span>
           </div>
           <p className="text-sm text-[#8B4513]/60">

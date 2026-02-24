@@ -140,7 +140,13 @@ export default function TeacherDashboard() {
             <h2 className="text-2xl font-bold text-white mb-1">老師登入</h2>
             <p className="text-white/70 text-sm">請輸入教師管理密碼以查看數據</p>
           </div>
-          <div className="p-8 space-y-4 bg-white">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleLogin();
+            }}
+            className="p-8 space-y-4 bg-white"
+          >
             <div className="space-y-4">
               <div className="space-y-2">
                 <label className="text-xs font-bold text-[#8B4513]/50 ml-1 uppercase">帳號 (Email)</label>
@@ -148,8 +154,9 @@ export default function TeacherDashboard() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="teacher@smes.edu.tw"
+                  placeholder="name@school.edu.tw"
                   className="h-12 rounded-xl border-2 border-[#E8D5B7] text-base px-4 focus:ring-2 focus:ring-[#E60012] transition-all"
+                  required
                 />
               </div>
               <div className="space-y-2">
@@ -160,24 +167,29 @@ export default function TeacherDashboard() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   className="h-12 rounded-xl border-2 border-[#E8D5B7] text-base px-4 focus:ring-2 focus:ring-[#E60012] transition-all"
-                  onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+                  required
                 />
               </div>
-              {error && <p className="text-sm text-red-500 font-medium px-2">{error}</p>}
             </div>
+            {error && (
+              <p className="text-sm text-red-500 bg-red-50 p-3 rounded-xl border border-red-100 animate-shake">
+                {error}
+              </p>
+            )}
             <Button
-              onClick={handleLogin}
-              className="w-full h-14 rounded-2xl bg-[#E60012] hover:bg-[#CC0010] text-white text-lg font-bold shadow-lg shadow-red-200 transition-all transform hover:scale-[1.02] active:scale-[0.98]"
+              type="submit"
+              className="w-full h-14 rounded-2xl bg-[#E60012] hover:bg-[#CC0010] text-white font-bold text-lg shadow-lg shadow-red-200 transition-all active:scale-95 flex items-center justify-center gap-2"
+              disabled={loading}
             >
-              進入管理後台
+              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "進入管理後台"}
             </Button>
             <Link href="/">
-              <Button variant="ghost" className="w-full h-10 text-[#8B4513] hover:bg-[#FFF8E7] rounded-xl">
+              <Button variant="ghost" className="w-full text-[#8B4513]/50 hover:text-[#E60012] hover:bg-red-50 rounded-xl">
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 返回首頁
               </Button>
             </Link>
-          </div>
+          </form>
         </Card>
       </div>
     );
@@ -268,6 +280,11 @@ export default function TeacherDashboard() {
                     <ClipboardList className="w-5 h-5 text-[#E60012]" />
                     學生實戰紀錄
                   </h3>
+                  <div className="flex items-center justify-center gap-3 mb-2">
+                    <span className="text-xl">🏮</span>
+                    <img src="./horse-mascot.png" alt="吉祥物" className="w-12 h-12 object-contain" />
+                    <span className="text-xl">🎆</span>
+                  </div>
                   <div className="flex items-center gap-2">
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8B4513]/30" />
