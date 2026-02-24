@@ -45,9 +45,10 @@ export function RiddleCard({
     }
   }, [isActive, isSolved]);
 
+  // 移除自動開啟提示的邏輯，改為由使用者主動點擊且門檻提高至 3 次
   useEffect(() => {
-    if (attempts >= 2 && isActive && !isSolved) {
-      setShowHint(true);
+    if (attempts >= 3 && isActive && !isSolved) {
+      // 不再自動 setShowHint(true);
     }
   }, [attempts, isActive, isSolved]);
 
@@ -81,11 +82,10 @@ export function RiddleCard({
   return (
     <div className="transition-all duration-300 animate-slide-up">
       <Card
-        className={`relative border-2 transition-all duration-300 ${
-          isSolved
+        className={`relative border-2 transition-all duration-300 ${isSolved
             ? "border-[#FFD700] bg-gradient-to-br from-[#FFF8E7] to-[#FFF0C8]"
             : "border-[#E60012] bg-white shadow-lg shadow-[#E60012]/10"
-        }`}
+          }`}
         data-testid={`riddle-card-${riddle.id}`}
       >
         {isSolved && (
@@ -99,11 +99,10 @@ export function RiddleCard({
         <div className="p-4 sm:p-6">
           <div className="flex items-start gap-3 sm:gap-4">
             <div
-              className={`flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-bold text-base sm:text-lg ${
-                isSolved
+              className={`flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-bold text-base sm:text-lg ${isSolved
                   ? "bg-[#FFD700] text-[#8B4513]"
                   : "bg-[#E60012] text-white"
-              }`}
+                }`}
             >
               {isSolved ? <Check className="w-5 h-5 sm:w-6 sm:h-6" /> : numberLabel}
             </div>
@@ -111,11 +110,10 @@ export function RiddleCard({
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-2 flex-wrap">
                 <span
-                  className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
-                    isSolved
+                  className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${isSolved
                       ? "bg-[#FFD700]/30 text-[#8B4513]"
                       : "bg-[#E60012]/10 text-[#E60012]"
-                  }`}
+                    }`}
                 >
                   {riddle.hint}
                 </span>
@@ -127,9 +125,8 @@ export function RiddleCard({
               </div>
 
               <p
-                className={`text-base sm:text-lg leading-relaxed font-medium mb-3 ${
-                  isSolved ? "text-[#8B4513]/70" : "text-[#8B4513]"
-                }`}
+                className={`text-base sm:text-lg leading-relaxed font-medium mb-3 ${isSolved ? "text-[#8B4513]/70" : "text-[#8B4513]"
+                  }`}
               >
                 {riddle.question}
               </p>
@@ -164,13 +161,12 @@ export function RiddleCard({
                       onKeyDown={handleKeyDown}
                       placeholder="輸入你的答案..."
                       disabled={isSubmitting}
-                      className={`flex-1 border-2 text-base h-12 rounded-xl transition-colors ${
-                        showResult === "wrong"
+                      className={`flex-1 border-2 text-base h-12 rounded-xl transition-colors ${showResult === "wrong"
                           ? "border-red-400 animate-shake bg-red-50"
                           : showResult === "correct"
                             ? "border-[#FFD700] bg-[#FFF8E7]"
                             : "border-[#E8D5B7] focus:border-[#E60012]"
-                      }`}
+                        }`}
                       data-testid={`input-answer-${riddle.id}`}
                     />
                     <Button
@@ -198,14 +194,16 @@ export function RiddleCard({
                   )}
 
                   <div className="flex items-center gap-2 flex-wrap">
-                    <button
-                      onClick={() => setShowHint(!showHint)}
-                      className="flex items-center gap-1.5 text-sm text-[#FF8C00] transition-colors"
-                      data-testid={`button-hint-${riddle.id}`}
-                    >
-                      <Lightbulb className="w-4 h-4" />
-                      {showHint ? "隱藏提示" : "需要提示嗎？"}
-                    </button>
+                    {attempts >= 3 && (
+                      <button
+                        onClick={() => setShowHint(!showHint)}
+                        className="flex items-center gap-1.5 text-sm text-[#FF8C00] transition-colors"
+                        data-testid={`button-hint-${riddle.id}`}
+                      >
+                        <Lightbulb className="w-4 h-4" />
+                        {showHint ? "隱藏提示" : "需要提示嗎？"}
+                      </button>
+                    )}
                     {attempts > 0 && (
                       <span className="text-xs text-[#8B4513]/40">
                         已嘗試 {attempts} 次
@@ -223,19 +221,17 @@ export function RiddleCard({
                       {currentHints.map((hint, i) => (
                         <div
                           key={i}
-                          className={`border rounded-lg p-3 ${
-                            i === currentHints.length - 1 && hintLevel > 1
+                          className={`border rounded-lg p-3 ${i === currentHints.length - 1 && hintLevel > 1
                               ? "bg-[#FFE8B8] border-[#FFD700]/60 animate-bounce-in"
                               : "bg-[#FFF8E7] border-[#FFD700]/40"
-                          }`}
+                            }`}
                         >
                           <div className="flex items-start gap-2">
                             <Lightbulb
-                              className={`w-3.5 h-3.5 mt-0.5 flex-shrink-0 ${
-                                i === currentHints.length - 1 && hintLevel > 1
+                              className={`w-3.5 h-3.5 mt-0.5 flex-shrink-0 ${i === currentHints.length - 1 && hintLevel > 1
                                   ? "text-[#FF6B6B]"
                                   : "text-[#FFD700]"
-                              }`}
+                                }`}
                             />
                             <p className="text-sm text-[#8B4513]">{hint}</p>
                           </div>
