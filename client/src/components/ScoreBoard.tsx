@@ -17,9 +17,9 @@ export function ScoreBoard({ solved, total, score }: ScoreBoardProps) {
             <Trophy className="w-6 h-6 text-[#FFD700]" />
           </div>
           <div>
-            <p className="text-white/70 text-xs sm:text-sm font-medium">遊戲進度</p>
+            <p className="text-white/70 text-xs sm:text-sm font-medium">闖關進度</p>
             <p className="text-xl sm:text-2xl font-bold">
-              {solved} <span className="text-white/60 text-base">/ {total}</span>
+              {solved} <span className="text-white/60 text-base">/ {total} 關</span>
             </p>
           </div>
         </div>
@@ -50,7 +50,7 @@ export function ScoreBoard({ solved, total, score }: ScoreBoardProps) {
                 </span>
               </div>
               <p className="text-white/60 text-xs">
-                {solved >= total ? "滿分！" : "加油！"}
+                {solved >= total ? "全部通關！" : "加油！"}
               </p>
             </div>
           )}
@@ -65,9 +65,9 @@ export function ScoreBoard({ solved, total, score }: ScoreBoardProps) {
           />
         </div>
         <div className="flex justify-between mt-1.5">
-          <span className="text-xs text-white/50">開始</span>
+          <span className="text-xs text-white/50">第 1 關</span>
           <span className="text-xs text-white/50">
-            {solved >= total ? "恭喜完成！" : `還剩 ${total - solved} 題`}
+            {solved >= total ? "恭喜全部通關！" : `還剩 ${total - solved} 關`}
           </span>
         </div>
       </div>

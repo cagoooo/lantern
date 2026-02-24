@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Check, X, Lightbulb, Send, Star, Lock, Loader2 } from "lucide-react";
+import { Check, X, Lightbulb, Send, Star, Loader2 } from "lucide-react";
 
 interface PublicRiddle {
   id: number;
@@ -77,19 +77,13 @@ export function RiddleCard({
   const currentHints = hints.slice(0, hintLevel);
 
   return (
-    <div
-      className={`transition-all duration-300 ${isActive ? "animate-slide-up" : ""}`}
-      onClick={!isActive && !isSolved ? onSelect : undefined}
-      style={{ cursor: !isActive && !isSolved ? "pointer" : "default" }}
-    >
+    <div className="transition-all duration-300 animate-slide-up">
       <Card
         className={`relative border-2 transition-all duration-300 ${
           isSolved
             ? "border-[#FFD700] bg-gradient-to-br from-[#FFF8E7] to-[#FFF0C8]"
-            : isActive
-              ? "border-[#E60012] bg-white shadow-lg shadow-[#E60012]/10"
-              : "border-[#E8D5B7] bg-white/80"
-        } ${!isActive && !isSolved ? "hover:border-[#FF6B6B] hover:shadow-md" : ""}`}
+            : "border-[#E60012] bg-white shadow-lg shadow-[#E60012]/10"
+        }`}
         data-testid={`riddle-card-${riddle.id}`}
       >
         {isSolved && (
@@ -106,9 +100,7 @@ export function RiddleCard({
               className={`flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-bold text-base sm:text-lg ${
                 isSolved
                   ? "bg-[#FFD700] text-[#8B4513]"
-                  : isActive
-                    ? "bg-[#E60012] text-white"
-                    : "bg-[#FFF0C8] text-[#8B4513]"
+                  : "bg-[#E60012] text-white"
               }`}
             >
               {isSolved ? <Check className="w-5 h-5 sm:w-6 sm:h-6" /> : numberLabel}
@@ -147,7 +139,7 @@ export function RiddleCard({
                 </div>
               )}
 
-              {isActive && !isSolved && (
+              {!isSolved && (
                 <div className="space-y-3 mt-4">
                   <div className="flex gap-2">
                     <Input
@@ -241,13 +233,6 @@ export function RiddleCard({
                       )}
                     </div>
                   )}
-                </div>
-              )}
-
-              {!isActive && !isSolved && (
-                <div className="flex items-center gap-2 mt-2 text-[#8B4513]/40">
-                  <Lock className="w-3.5 h-3.5" />
-                  <span className="text-xs">點擊來挑戰這題</span>
                 </div>
               )}
             </div>

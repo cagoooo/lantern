@@ -32,6 +32,8 @@ import {
   Calendar,
   Shuffle,
   Smartphone,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -70,6 +72,7 @@ export default function Home() {
   const [showEventControl, setShowEventControl] = useState(false);
   const [shakeNotice, setShakeNotice] = useState(false);
   const [firebaseLoaded, setFirebaseLoaded] = useState(false);
+  const [stageTransition, setStageTransition] = useState(false);
   const riddleListRef = useRef<HTMLDivElement>(null);
 
   const { data: riddles, isLoading } = useQuery<PublicRiddle[]>({
@@ -90,6 +93,28 @@ export default function Home() {
     saveToFirestore(gameState);
   }, [gameState, firebaseLoaded]);
 
+  const currentIndex = gameState.currentRiddleIndex;
+  const currentRiddle = riddles ? riddles[currentIndex] : null;
+  const totalRiddles = riddles?.length ?? 10;
+
+  const goToStage = useCallback((index: number) => {
+    if (!riddles || index < 0 || index >= riddles.length) return;
+    setStageTransition(true);
+    setTimeout(() => {
+      setGameState((prev) => ({ ...prev, currentRiddleIndex: index }));
+      setStageTransition(false);
+    }, 200);
+  }, [riddles]);
+
+  const goNext = useCallback(() => {
+    if (!riddles) return;
+    if (currentIndex < riddles.length - 1) goToStage(currentIndex + 1);
+  }, [riddles, currentIndex, goToStage]);
+
+  const goPrev = useCallback(() => {
+    if (currentIndex > 0) goToStage(currentIndex - 1);
+  }, [currentIndex, goToStage]);
+
   const pickRandomUnsolved = useCallback(() => {
     if (!riddles) return;
     const unsolved = riddles
@@ -97,16 +122,12 @@ export default function Home() {
       .filter((r) => !gameState.solvedRiddles.includes(r.id));
     if (unsolved.length === 0) return;
     const pick = unsolved[Math.floor(Math.random() * unsolved.length)];
-    setGameState((prev) => ({ ...prev, currentRiddleIndex: pick.index }));
 
     setShakeNotice(true);
     setTimeout(() => setShakeNotice(false), 2000);
 
-    setTimeout(() => {
-      const el = document.querySelector(`[data-testid="riddle-card-${pick.id}"]`);
-      el?.scrollIntoView({ behavior: "smooth", block: "center" });
-    }, 200);
-  }, [riddles, gameState.solvedRiddles]);
+    goToStage(pick.index);
+  }, [riddles, gameState.solvedRiddles, goToStage]);
 
   useShake({
     onShake: pickRandomUnsolved,
@@ -160,6 +181,12 @@ export default function Home() {
           setShowConfetti(true);
           setConfettiKey((k) => k + 1);
           setTimeout(() => setShowConfetti(false), 3500);
+
+          if (riddles && currentIndex < riddles.length - 1) {
+            setTimeout(() => {
+              goNext();
+            }, 2000);
+          }
         }
 
         return data.correct;
@@ -167,12 +194,8 @@ export default function Home() {
         return false;
       }
     },
-    [riddles, gameState.solvedRiddles, soundEnabled]
+    [riddles, gameState.solvedRiddles, soundEnabled, currentIndex, goNext]
   );
-
-  const handleSelectRiddle = useCallback((index: number) => {
-    setGameState((prev) => ({ ...prev, currentRiddleIndex: index }));
-  }, []);
 
   const handleReset = useCallback(() => {
     setGameState({ currentRiddleIndex: 0, solvedRiddles: [], attempts: {}, score: 0 });
@@ -306,7 +329,12 @@ export default function Home() {
           />
 
           <div className="flex items-center justify-between gap-2 flex-wrap">
-            <h2 className="text-lg sm:text-xl font-bold text-[#8B4513]">燈謎題目</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg sm:text-xl font-bold text-[#8B4513]">
+                第 {currentIndex + 1} 關
+              </h2>
+              <span className="text-sm text-[#8B4513]/50">/ 共 {totalRiddles} 關</span>
+            </div>
             <div className="flex items-center gap-2 flex-wrap">
               <button
                 onClick={pickRandomUnsolved}
@@ -345,20 +373,77 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="space-y-3 sm:space-y-4" ref={riddleListRef}>
-            {riddles.map((riddle, index) => (
+          <div className="flex items-center justify-center gap-1.5 flex-wrap">
+            {riddles.map((riddle, i) => {
+              const solved = gameState.solvedRiddles.includes(riddle.id);
+              const isCurrent = i === currentIndex;
+              return (
+                <button
+                  key={riddle.id}
+                  onClick={() => goToStage(i)}
+                  className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full text-xs sm:text-sm font-bold transition-all duration-300 ${
+                    isCurrent
+                      ? "bg-[#E60012] text-white scale-110 shadow-lg shadow-[#E60012]/30 ring-2 ring-[#E60012]/30 ring-offset-2"
+                      : solved
+                        ? "bg-[#FFD700] text-[#8B4513] shadow-md"
+                        : "bg-white/80 text-[#8B4513]/60 border border-[#E8D5B7] hover:border-[#E60012] hover:text-[#E60012]"
+                  }`}
+                  data-testid={`stage-dot-${i + 1}`}
+                  title={`第 ${i + 1} 關${solved ? " (已解)" : ""}`}
+                >
+                  {solved ? "✓" : i + 1}
+                </button>
+              );
+            })}
+          </div>
+
+          <div
+            ref={riddleListRef}
+            className={`transition-all duration-200 ${stageTransition ? "opacity-0 translate-y-4" : "opacity-100 translate-y-0"}`}
+          >
+            {currentRiddle && (
               <RiddleCard
-                key={riddle.id}
-                riddle={riddle}
-                index={index}
-                isSolved={gameState.solvedRiddles.includes(riddle.id)}
-                solvedAnswer={solvedAnswers[riddle.id]}
-                attempts={gameState.attempts[riddle.id] || 0}
-                onSubmit={(answer) => handleSubmit(riddle.id, answer)}
-                isActive={gameState.currentRiddleIndex === index}
-                onSelect={() => handleSelectRiddle(index)}
+                key={currentRiddle.id}
+                riddle={currentRiddle}
+                index={currentIndex}
+                isSolved={gameState.solvedRiddles.includes(currentRiddle.id)}
+                solvedAnswer={solvedAnswers[currentRiddle.id]}
+                attempts={gameState.attempts[currentRiddle.id] || 0}
+                onSubmit={(answer) => handleSubmit(currentRiddle.id, answer)}
+                isActive={true}
+                onSelect={() => {}}
               />
-            ))}
+            )}
+          </div>
+
+          <div className="flex items-center justify-between gap-4">
+            <Button
+              variant="outline"
+              onClick={goPrev}
+              disabled={currentIndex === 0}
+              className="flex items-center gap-1.5 border-[#E8D5B7] text-[#8B4513]/70 rounded-xl px-4 h-10 disabled:opacity-30"
+              data-testid="button-prev-stage"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              上一關
+            </Button>
+
+            {currentRiddle && gameState.solvedRiddles.includes(currentRiddle.id) && currentIndex < riddles.length - 1 && (
+              <div className="text-center animate-bounce-in">
+                <p className="text-xs text-[#8B4513]/50 mb-1">答對了！</p>
+              </div>
+            )}
+
+            <Button
+              variant="outline"
+              onClick={goNext}
+              disabled={currentIndex >= riddles.length - 1}
+              className="flex items-center gap-1.5 border-[#E8D5B7] text-[#8B4513]/70 rounded-xl px-4 h-10 disabled:opacity-30"
+              data-testid="button-next-stage"
+            >
+              下一關
+              <ChevronRight className="w-4 h-4" />
+            </Button>
           </div>
 
           <div className="text-center pt-4 pb-8">
