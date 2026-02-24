@@ -96,7 +96,7 @@ export function EventControl({ open, onClose }: EventControlProps) {
     ctx.font = "500 20px 'Noto Sans TC', sans-serif";
     ctx.fillText("\u6D3B\u52D5\u65E5\u671F\uFF1A2026\u5E74 3\u6708 3\u65E5\uFF08\u4E8C\uFF09", w / 2, 225);
     ctx.font = "400 16px 'Noto Sans TC', sans-serif";
-    ctx.fillText("阿凱老師製作 ✨", w / 2, 250);
+    ctx.fillText("學務處將舉行猜燈謎活動 🧧✨🏮", w / 2, 250);
 
     const qrImg = new Image();
     qrImg.onload = () => {
@@ -129,7 +129,7 @@ export function EventControl({ open, onClose }: EventControlProps) {
 
       ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
       ctx.font = "400 13px 'Noto Sans TC', sans-serif";
-      ctx.fillText("石門國小阿凱老師 製作 ✨🏮", w / 2, h - 50);
+      ctx.fillText("石門國小學務處 敬邀 ✨🏮", w / 2, h - 50);
 
       const dataUrl = canvas.toDataURL("image/png");
       const link = document.createElement("a");
