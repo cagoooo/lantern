@@ -2,10 +2,10 @@ const CACHE_NAME = 'shimen-riddle-v2';
 const API_CACHE = 'shimen-api-v1';
 
 const STATIC_ASSETS = [
-  './',
-  './manifest.json',
-  './icon-192.png',
-  './icon-512.png',
+  '/lantern/',
+  '/lantern/manifest.json',
+  '/lantern/icon-192.png',
+  '/lantern/icon-512.png',
 ];
 
 self.addEventListener('install', (event) => {
