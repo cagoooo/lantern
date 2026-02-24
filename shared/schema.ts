@@ -8,6 +8,7 @@ export const riddleSchema = z.object({
 
 export const riddleWithAnswersSchema = riddleSchema.extend({
   answers: z.array(z.string()),
+  explanation: z.string().optional(),
 });
 
 export const answerSubmissionSchema = z.object({

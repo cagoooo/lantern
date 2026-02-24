@@ -6,9 +6,14 @@ import { ScoreBoard } from "@/components/ScoreBoard";
 import { FloatingLanterns } from "@/components/FloatingLanterns";
 import { ConfettiEffect } from "@/components/ConfettiEffect";
 import { CompletionModal } from "@/components/CompletionModal";
+import { FireworksEffect } from "@/components/FireworksEffect";
+import { ProgressMap } from "@/components/ProgressMap";
 import { TimerMode } from "@/components/TimerMode";
 import { ShareCard } from "@/components/ShareCard";
 import { EventControl } from "@/components/EventControl";
+import { StudentLogin } from "@/components/StudentLogin";
+import { Leaderboard } from "@/components/Leaderboard";
+import { PrizeCode } from "@/components/PrizeCode";
 import { useShake } from "@/hooks/use-shake";
 import {
   playCorrectSound,
@@ -21,6 +26,11 @@ import {
   loadGameState as loadFromFirestore,
   saveGameState as saveToFirestore,
   resetGameState as resetFirestore,
+  saveStudentProfile,
+  loadLocalProfile,
+  loadStudentProfile,
+  submitScore,
+  type StudentProfile,
 } from "@/lib/gameStore";
 import type { GameState } from "@shared/schema";
 import {
@@ -34,8 +44,14 @@ import {
   Smartphone,
   ChevronLeft,
   ChevronRight,
+  Trophy,
+  Gift,
+  Swords,
+  BarChart3,
+  LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link } from "wouter";
 
 interface PublicRiddle {
   id: number;
@@ -54,11 +70,13 @@ function loadLocalState(): GameState {
 }
 
 export default function Home() {
+  const [studentProfile, setStudentProfile] = useState<StudentProfile | null>(loadLocalProfile);
   const [gameState, setGameState] = useState<GameState>(loadLocalState);
   const [showConfetti, setShowConfetti] = useState(false);
   const [confettiKey, setConfettiKey] = useState(0);
   const [showCompletion, setShowCompletion] = useState(false);
   const [solvedAnswers, setSolvedAnswers] = useState<Record<number, string>>({});
+  const [solvedExplanations, setSolvedExplanations] = useState<Record<number, string>>({});
   const [soundEnabled, setSoundEnabled] = useState(() => {
     try {
       return localStorage.getItem("shimen-sound") !== "off";
@@ -70,9 +88,12 @@ export default function Home() {
   const [timerElapsed, setTimerElapsed] = useState(0);
   const [showShareCard, setShowShareCard] = useState(false);
   const [showEventControl, setShowEventControl] = useState(false);
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [showPrizeCode, setShowPrizeCode] = useState(false);
   const [shakeNotice, setShakeNotice] = useState(false);
   const [firebaseLoaded, setFirebaseLoaded] = useState(false);
   const [stageTransition, setStageTransition] = useState(false);
+  const [showFireworks, setShowFireworks] = useState(false);
   const riddleListRef = useRef<HTMLDivElement>(null);
 
   const { data: riddles, isLoading } = useQuery<PublicRiddle[]>({
@@ -80,8 +101,12 @@ export default function Home() {
   });
 
   useEffect(() => {
-    loadFromFirestore().then((cloudState) => {
+    Promise.all([
+      loadFromFirestore(),
+      loadStudentProfile(),
+    ]).then(([cloudState, cloudProfile]) => {
       setGameState(cloudState);
+      if (cloudProfile) setStudentProfile(cloudProfile);
       setFirebaseLoaded(true);
     }).catch(() => {
       setFirebaseLoaded(true);
@@ -159,9 +184,13 @@ export default function Home() {
             const points = attemptCount === 1 ? 10 : attemptCount === 2 ? 7 : 5;
 
             if (newSolved.length === (riddles?.length || 10)) {
+              const finalScore = prev.score + points;
               setTimeout(() => {
                 if (soundEnabled) playCompletionSound();
+                setShowFireworks(true);
                 setShowCompletion(true);
+                setTimeout(() => setShowFireworks(false), 8000);
+                submitScore(finalScore, newSolved.length, timerActive ? timerElapsed : undefined).catch(() => {});
               }, 1500);
             }
 
@@ -178,6 +207,9 @@ export default function Home() {
 
         if (data.correct) {
           setSolvedAnswers((prev) => ({ ...prev, [riddleId]: data.answer }));
+          if (data.explanation) {
+            setSolvedExplanations((prev) => ({ ...prev, [riddleId]: data.explanation }));
+          }
           setShowConfetti(true);
           setConfettiKey((k) => k + 1);
           setTimeout(() => setShowConfetti(false), 3500);
@@ -200,6 +232,7 @@ export default function Home() {
   const handleReset = useCallback(() => {
     setGameState({ currentRiddleIndex: 0, solvedRiddles: [], attempts: {}, score: 0 });
     setSolvedAnswers({});
+    setSolvedExplanations({});
     setShowCompletion(false);
     resetFirestore();
   }, []);
@@ -219,6 +252,20 @@ export default function Home() {
 
   const gameComplete = gameState.solvedRiddles.length === (riddles?.length ?? 10);
 
+  const handleStudentLogin = useCallback(async (className: string, seatNumber: string, nickname: string) => {
+    const profile = await saveStudentProfile(className, seatNumber, nickname);
+    setStudentProfile(profile);
+  }, []);
+
+  const handleLogout = useCallback(() => {
+    try { localStorage.removeItem("shimen-student-profile"); } catch {}
+    setStudentProfile(null);
+  }, []);
+
+  if (!studentProfile) {
+    return <StudentLogin onLogin={handleStudentLogin} />;
+  }
+
   if (isLoading || !riddles) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-[#FFF8E7] via-[#FFF3D6] to-[#FFE8B8] flex items-center justify-center">
@@ -235,6 +282,7 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-b from-[#FFF8E7] via-[#FFF3D6] to-[#FFE8B8] relative">
       <FloatingLanterns />
       <ConfettiEffect key={confettiKey} active={showConfetti} />
+      <FireworksEffect active={showFireworks} />
 
       {shakeNotice && (
         <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 animate-bounce-in">
@@ -261,6 +309,19 @@ export default function Home() {
           </div>
 
           <div className="relative px-4 py-6 sm:py-10 text-center">
+            <div className="absolute top-3 left-3 flex items-center gap-1">
+              <span className="text-white/60 text-[10px] sm:text-xs truncate max-w-[100px] sm:max-w-none">
+                {studentProfile.className} {studentProfile.nickname}
+              </span>
+              <button
+                onClick={handleLogout}
+                className="p-1.5 rounded-full bg-white/10 text-white/50 transition-colors hover:bg-white/20"
+                data-testid="button-logout"
+                title="登出"
+              >
+                <LogOut className="w-3 h-3" />
+              </button>
+            </div>
             <div className="absolute top-3 right-3 flex items-center gap-1.5">
               <button
                 onClick={toggleSound}
@@ -373,29 +434,12 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="flex items-center justify-center gap-1.5 flex-wrap">
-            {riddles.map((riddle, i) => {
-              const solved = gameState.solvedRiddles.includes(riddle.id);
-              const isCurrent = i === currentIndex;
-              return (
-                <button
-                  key={riddle.id}
-                  onClick={() => goToStage(i)}
-                  className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full text-xs sm:text-sm font-bold transition-all duration-300 ${
-                    isCurrent
-                      ? "bg-[#E60012] text-white scale-110 shadow-lg shadow-[#E60012]/30 ring-2 ring-[#E60012]/30 ring-offset-2"
-                      : solved
-                        ? "bg-[#FFD700] text-[#8B4513] shadow-md"
-                        : "bg-white/80 text-[#8B4513]/60 border border-[#E8D5B7] hover:border-[#E60012] hover:text-[#E60012]"
-                  }`}
-                  data-testid={`stage-dot-${i + 1}`}
-                  title={`第 ${i + 1} 關${solved ? " (已解)" : ""}`}
-                >
-                  {solved ? "✓" : i + 1}
-                </button>
-              );
-            })}
-          </div>
+          <ProgressMap
+            total={riddles.length}
+            solvedRiddles={gameState.solvedRiddles}
+            currentIndex={currentIndex}
+            onSelectStage={goToStage}
+          />
 
           <div
             ref={riddleListRef}
@@ -408,6 +452,7 @@ export default function Home() {
                 index={currentIndex}
                 isSolved={gameState.solvedRiddles.includes(currentRiddle.id)}
                 solvedAnswer={solvedAnswers[currentRiddle.id]}
+                solvedExplanation={solvedExplanations[currentRiddle.id]}
                 attempts={gameState.attempts[currentRiddle.id] || 0}
                 onSubmit={(answer) => handleSubmit(currentRiddle.id, answer)}
                 isActive={true}
@@ -446,6 +491,37 @@ export default function Home() {
             </Button>
           </div>
 
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <button
+              onClick={() => setShowLeaderboard(true)}
+              className="flex items-center justify-center gap-2 p-3 rounded-xl bg-white/60 border border-[#E8D5B7] text-[#8B4513] text-sm font-medium hover:bg-white/80 transition-colors"
+              data-testid="button-leaderboard"
+            >
+              <Trophy className="w-4 h-4 text-[#FFD700]" />
+              排行榜
+            </button>
+            <button
+              onClick={() => setShowPrizeCode(true)}
+              className="flex items-center justify-center gap-2 p-3 rounded-xl bg-white/60 border border-[#E8D5B7] text-[#8B4513] text-sm font-medium hover:bg-white/80 transition-colors"
+              data-testid="button-prize"
+            >
+              <Gift className="w-4 h-4 text-[#E60012]" />
+              兌獎
+            </button>
+            <Link href="/battle">
+              <div className="flex items-center justify-center gap-2 p-3 rounded-xl bg-white/60 border border-[#E8D5B7] text-[#8B4513] text-sm font-medium hover:bg-white/80 transition-colors cursor-pointer">
+                <Swords className="w-4 h-4 text-[#FF6B6B]" />
+                班級對戰
+              </div>
+            </Link>
+            <Link href="/teacher">
+              <div className="flex items-center justify-center gap-2 p-3 rounded-xl bg-white/60 border border-[#E8D5B7] text-[#8B4513]/50 text-sm font-medium hover:bg-white/80 transition-colors cursor-pointer">
+                <BarChart3 className="w-4 h-4" />
+                教師專區
+              </div>
+            </Link>
+          </div>
+
           <div className="text-center pt-4 pb-8">
             <div className="inline-flex items-center gap-2 text-[#8B4513]/40 text-sm">
               <CloudIcon />
@@ -480,6 +556,19 @@ export default function Home() {
       <EventControl
         open={showEventControl}
         onClose={() => setShowEventControl(false)}
+      />
+
+      <Leaderboard
+        open={showLeaderboard}
+        onClose={() => setShowLeaderboard(false)}
+      />
+
+      <PrizeCode
+        open={showPrizeCode}
+        onClose={() => setShowPrizeCode(false)}
+        score={gameState.score}
+        solvedCount={gameState.solvedRiddles.length}
+        total={riddles.length}
       />
     </div>
   );

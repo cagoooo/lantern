@@ -13,8 +13,18 @@ import { db, ensureAuth, getCurrentUid } from "./firebase";
 import type { GameState } from "@shared/schema";
 
 const STORAGE_KEY = "shimen-riddle-game";
+const PROFILE_KEY = "shimen-student-profile";
 const COLLECTION_SCORES = "scores";
 const COLLECTION_GAME_STATE = "gameStates";
+const COLLECTION_PROFILES = "studentProfiles";
+
+export interface StudentProfile {
+  uid: string;
+  className: string;
+  seatNumber: string;
+  nickname: string;
+  createdAt: unknown;
+}
 
 function getDefaultState(): GameState {
   return { currentRiddleIndex: 0, solvedRiddles: [], attempts: {}, score: 0 };
@@ -32,6 +42,57 @@ function saveLocalState(state: GameState) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   } catch {}
+}
+
+export function loadLocalProfile(): StudentProfile | null {
+  try {
+    const saved = localStorage.getItem(PROFILE_KEY);
+    if (saved) return JSON.parse(saved);
+  } catch {}
+  return null;
+}
+
+function saveLocalProfile(profile: StudentProfile) {
+  try {
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+  } catch {}
+}
+
+export async function saveStudentProfile(
+  className: string,
+  seatNumber: string,
+  nickname: string
+): Promise<StudentProfile> {
+  const uid = await ensureAuth();
+  const profile: StudentProfile = {
+    uid,
+    className,
+    seatNumber,
+    nickname,
+    createdAt: serverTimestamp(),
+  };
+
+  const docRef = doc(db, COLLECTION_PROFILES, uid);
+  await setDoc(docRef, profile);
+  saveLocalProfile({ ...profile, createdAt: new Date().toISOString() });
+  return profile;
+}
+
+export async function loadStudentProfile(): Promise<StudentProfile | null> {
+  const local = loadLocalProfile();
+
+  try {
+    const uid = await ensureAuth();
+    const docRef = doc(db, COLLECTION_PROFILES, uid);
+    const snapshot = await getDoc(docRef);
+    if (snapshot.exists()) {
+      const profile = snapshot.data() as StudentProfile;
+      saveLocalProfile(profile);
+      return profile;
+    }
+  } catch {}
+
+  return local;
 }
 
 export async function loadGameState(): Promise<GameState> {
@@ -79,6 +140,8 @@ export async function saveGameState(state: GameState): Promise<void> {
 export interface ScoreEntry {
   uid: string;
   nickname: string;
+  className?: string;
+  seatNumber?: string;
   score: number;
   solvedCount: number;
   totalTime?: number;
@@ -86,17 +149,20 @@ export interface ScoreEntry {
 }
 
 export async function submitScore(
-  nickname: string,
   score: number,
   solvedCount: number,
   totalTime?: number
 ): Promise<void> {
   try {
     const uid = await ensureAuth();
+    const profile = loadLocalProfile();
+
     const docRef = doc(db, COLLECTION_SCORES, uid);
     await setDoc(docRef, {
       uid,
-      nickname,
+      nickname: profile?.nickname || "匿名",
+      className: profile?.className || "",
+      seatNumber: profile?.seatNumber || "",
       score,
       solvedCount,
       totalTime: totalTime ?? null,
@@ -105,7 +171,7 @@ export async function submitScore(
   } catch {}
 }
 
-export async function getLeaderboard(max = 20): Promise<ScoreEntry[]> {
+export async function getLeaderboard(max = 50): Promise<ScoreEntry[]> {
   try {
     await ensureAuth();
     const q = query(
@@ -117,6 +183,91 @@ export async function getLeaderboard(max = 20): Promise<ScoreEntry[]> {
     return snapshot.docs.map((d) => d.data() as ScoreEntry);
   } catch {
     return [];
+  }
+}
+
+export async function getClassLeaderboard(): Promise<Record<string, { totalScore: number; count: number; avgScore: number }>> {
+  try {
+    await ensureAuth();
+    const q = query(
+      collection(db, COLLECTION_SCORES),
+      orderBy("score", "desc")
+    );
+    const snapshot = await getDocs(q);
+    const classMap: Record<string, { totalScore: number; count: number; avgScore: number }> = {};
+
+    snapshot.docs.forEach((d) => {
+      const entry = d.data() as ScoreEntry;
+      if (!entry.className) return;
+      if (!classMap[entry.className]) {
+        classMap[entry.className] = { totalScore: 0, count: 0, avgScore: 0 };
+      }
+      classMap[entry.className].totalScore += entry.score;
+      classMap[entry.className].count += 1;
+      classMap[entry.className].avgScore =
+        classMap[entry.className].totalScore / classMap[entry.className].count;
+    });
+
+    return classMap;
+  } catch {
+    return {};
+  }
+}
+
+export async function getStatsForTeacher(): Promise<{
+  totalPlayers: number;
+  classStats: Record<string, number>;
+  riddleStats: Record<number, { attempts: number; solved: number }>;
+}> {
+  try {
+    await ensureAuth();
+    const statesQuery = query(collection(db, COLLECTION_GAME_STATE));
+    const scoresQuery = query(collection(db, COLLECTION_SCORES));
+    const profilesQuery = query(collection(db, COLLECTION_PROFILES));
+
+    const [statesSnap, scoresSnap, profilesSnap] = await Promise.all([
+      getDocs(statesQuery),
+      getDocs(scoresQuery),
+      getDocs(profilesQuery),
+    ]);
+
+    const classStats: Record<string, number> = {};
+    profilesSnap.docs.forEach((d) => {
+      const p = d.data() as StudentProfile;
+      if (p.className) {
+        classStats[p.className] = (classStats[p.className] || 0) + 1;
+      }
+    });
+
+    const riddleStats: Record<number, { attempts: number; solved: number }> = {};
+    statesSnap.docs.forEach((d) => {
+      const state = d.data() as GameState;
+      if (state.attempts) {
+        Object.entries(state.attempts).forEach(([id, count]) => {
+          const riddleId = parseInt(id);
+          if (!riddleStats[riddleId]) {
+            riddleStats[riddleId] = { attempts: 0, solved: 0 };
+          }
+          riddleStats[riddleId].attempts += count;
+        });
+      }
+      if (state.solvedRiddles) {
+        state.solvedRiddles.forEach((id) => {
+          if (!riddleStats[id]) {
+            riddleStats[id] = { attempts: 0, solved: 0 };
+          }
+          riddleStats[id].solved += 1;
+        });
+      }
+    });
+
+    return {
+      totalPlayers: scoresSnap.size,
+      classStats,
+      riddleStats,
+    };
+  } catch {
+    return { totalPlayers: 0, classStats: {}, riddleStats: {} };
   }
 }
 
@@ -133,5 +284,11 @@ export async function resetGameState(): Promise<void> {
       ...defaultState,
       updatedAt: serverTimestamp(),
     });
+  } catch {}
+}
+
+export function clearLocalProfile(): void {
+  try {
+    localStorage.removeItem(PROFILE_KEY);
   } catch {}
 }

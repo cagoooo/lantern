@@ -15,6 +15,7 @@ interface RiddleCardProps {
   index: number;
   isSolved: boolean;
   solvedAnswer?: string;
+  solvedExplanation?: string;
   attempts: number;
   onSubmit: (answer: string) => Promise<boolean>;
   isActive: boolean;
@@ -26,6 +27,7 @@ export function RiddleCard({
   index,
   isSolved,
   solvedAnswer,
+  solvedExplanation,
   attempts,
   onSubmit,
   isActive,
@@ -133,9 +135,22 @@ export function RiddleCard({
               </p>
 
               {isSolved && solvedAnswer && (
-                <div className="flex items-center gap-2 mb-2 animate-bounce-in">
-                  <span className="text-sm text-[#8B4513]/60">答案：</span>
-                  <span className="text-lg font-bold text-[#E60012]">{solvedAnswer}</span>
+                <div className="space-y-3 animate-bounce-in">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-[#8B4513]/60">答案：</span>
+                    <span className="text-lg font-bold text-[#E60012]">{solvedAnswer}</span>
+                  </div>
+                  {solvedExplanation && (
+                    <div className="bg-gradient-to-r from-[#FFF8E7] to-[#FFF0C8] border border-[#FFD700]/40 rounded-xl p-3 sm:p-4">
+                      <div className="flex items-start gap-2">
+                        <span className="text-base flex-shrink-0 mt-0.5">💡</span>
+                        <div>
+                          <p className="text-xs font-bold text-[#8B4513]/70 mb-1">解題解析</p>
+                          <p className="text-sm text-[#8B4513] leading-relaxed">{solvedExplanation}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
