@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { RiddleCard } from "@/components/RiddleCard";
@@ -6,8 +6,28 @@ import { ScoreBoard } from "@/components/ScoreBoard";
 import { FloatingLanterns } from "@/components/FloatingLanterns";
 import { ConfettiEffect } from "@/components/ConfettiEffect";
 import { CompletionModal } from "@/components/CompletionModal";
+import { TimerMode } from "@/components/TimerMode";
+import { ShareCard } from "@/components/ShareCard";
+import { EventControl } from "@/components/EventControl";
+import { useShake } from "@/hooks/use-shake";
+import {
+  playCorrectSound,
+  playWrongSound,
+  playCompletionSound,
+  startBgMusic,
+  stopBgMusic,
+} from "@/lib/sounds";
 import type { GameState } from "@shared/schema";
-import { Sparkles, Loader2 } from "lucide-react";
+import {
+  Sparkles,
+  Loader2,
+  Volume2,
+  VolumeX,
+  Share2,
+  Calendar,
+  Shuffle,
+  Smartphone,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface PublicRiddle {
@@ -36,6 +56,19 @@ export default function Home() {
   const [confettiKey, setConfettiKey] = useState(0);
   const [showCompletion, setShowCompletion] = useState(false);
   const [solvedAnswers, setSolvedAnswers] = useState<Record<number, string>>({});
+  const [soundEnabled, setSoundEnabled] = useState(() => {
+    try {
+      return localStorage.getItem("shimen-sound") !== "off";
+    } catch {
+      return true;
+    }
+  });
+  const [timerActive, setTimerActive] = useState(false);
+  const [timerElapsed, setTimerElapsed] = useState(0);
+  const [showShareCard, setShowShareCard] = useState(false);
+  const [showEventControl, setShowEventControl] = useState(false);
+  const [shakeNotice, setShakeNotice] = useState(false);
+  const riddleListRef = useRef<HTMLDivElement>(null);
 
   const { data: riddles, isLoading } = useQuery<PublicRiddle[]>({
     queryKey: ["/api/riddles"],
@@ -45,6 +78,29 @@ export default function Home() {
     saveGameState(gameState);
   }, [gameState]);
 
+  const pickRandomUnsolved = useCallback(() => {
+    if (!riddles) return;
+    const unsolved = riddles
+      .map((r, i) => ({ id: r.id, index: i }))
+      .filter((r) => !gameState.solvedRiddles.includes(r.id));
+    if (unsolved.length === 0) return;
+    const pick = unsolved[Math.floor(Math.random() * unsolved.length)];
+    setGameState((prev) => ({ ...prev, currentRiddleIndex: pick.index }));
+
+    setShakeNotice(true);
+    setTimeout(() => setShakeNotice(false), 2000);
+
+    setTimeout(() => {
+      const el = document.querySelector(`[data-testid="riddle-card-${pick.id}"]`);
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 200);
+  }, [riddles, gameState.solvedRiddles]);
+
+  useShake({
+    onShake: pickRandomUnsolved,
+    enabled: !!riddles && gameState.solvedRiddles.length < (riddles?.length ?? 10),
+  });
+
   const handleSubmit = useCallback(
     async (riddleId: number, answer: string): Promise<boolean> => {
       if (gameState.solvedRiddles.includes(riddleId)) return false;
@@ -52,6 +108,9 @@ export default function Home() {
       try {
         const res = await apiRequest("POST", `/api/riddles/${riddleId}/check`, { answer });
         const data = await res.json();
+
+        if (data.correct && soundEnabled) playCorrectSound();
+        if (!data.correct && soundEnabled) playWrongSound();
 
         setGameState((prev) => {
           if (prev.solvedRiddles.includes(riddleId)) return prev;
@@ -67,7 +126,10 @@ export default function Home() {
             const points = attemptCount === 1 ? 10 : attemptCount === 2 ? 7 : 5;
 
             if (newSolved.length === (riddles?.length || 10)) {
-              setTimeout(() => setShowCompletion(true), 1500);
+              setTimeout(() => {
+                if (soundEnabled) playCompletionSound();
+                setShowCompletion(true);
+              }, 1500);
             }
 
             return {
@@ -93,7 +155,7 @@ export default function Home() {
         return false;
       }
     },
-    [riddles, gameState.solvedRiddles]
+    [riddles, gameState.solvedRiddles, soundEnabled]
   );
 
   const handleSelectRiddle = useCallback((index: number) => {
@@ -105,6 +167,21 @@ export default function Home() {
     setSolvedAnswers({});
     setShowCompletion(false);
   }, []);
+
+  const toggleSound = useCallback(() => {
+    setSoundEnabled((prev) => {
+      const next = !prev;
+      localStorage.setItem("shimen-sound", next ? "on" : "off");
+      if (next) {
+        startBgMusic();
+      } else {
+        stopBgMusic();
+      }
+      return next;
+    });
+  }, []);
+
+  const gameComplete = gameState.solvedRiddles.length === (riddles?.length ?? 10);
 
   if (isLoading || !riddles) {
     return (
@@ -123,16 +200,54 @@ export default function Home() {
       <FloatingLanterns />
       <ConfettiEffect key={confettiKey} active={showConfetti} />
 
+      {shakeNotice && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 animate-bounce-in">
+          <div className="bg-[#E60012] text-white px-4 py-2 rounded-full shadow-lg text-sm font-medium flex items-center gap-2">
+            <Shuffle className="w-4 h-4" />
+            隨機跳轉！
+          </div>
+        </div>
+      )}
+
       <div className="relative z-10">
         <header className="relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-b from-[#E60012] via-[#CC0010] to-[#A80010]" />
           <div className="absolute inset-0 opacity-10">
-            <div className="absolute top-2 left-4 text-6xl sm:text-8xl text-white/20 font-bold select-none">福</div>
-            <div className="absolute top-4 right-6 text-5xl sm:text-7xl text-white/15 font-bold select-none">春</div>
-            <div className="absolute bottom-2 left-1/4 text-4xl sm:text-6xl text-white/10 font-bold select-none">喜</div>
+            <div className="absolute top-2 left-4 text-6xl sm:text-8xl text-white/20 font-bold select-none">
+              福
+            </div>
+            <div className="absolute top-4 right-6 text-5xl sm:text-7xl text-white/15 font-bold select-none">
+              春
+            </div>
+            <div className="absolute bottom-2 left-1/4 text-4xl sm:text-6xl text-white/10 font-bold select-none">
+              喜
+            </div>
           </div>
 
           <div className="relative px-4 py-6 sm:py-10 text-center">
+            <div className="absolute top-3 right-3 flex items-center gap-1.5">
+              <button
+                onClick={toggleSound}
+                className="p-2 rounded-full bg-white/10 text-white/70 transition-colors"
+                data-testid="button-sound-toggle"
+                title={soundEnabled ? "關閉音效" : "開啟音效"}
+              >
+                {soundEnabled ? (
+                  <Volume2 className="w-4 h-4" />
+                ) : (
+                  <VolumeX className="w-4 h-4" />
+                )}
+              </button>
+              <button
+                onClick={() => setShowEventControl(true)}
+                className="p-2 rounded-full bg-white/10 text-white/70 transition-colors"
+                data-testid="button-event-info"
+                title="活動資訊"
+              >
+                <Calendar className="w-4 h-4" />
+              </button>
+            </div>
+
             <div className="flex items-center justify-center gap-2 mb-2 sm:mb-3">
               <LanternIcon />
               <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold text-white tracking-wide">
@@ -161,31 +276,63 @@ export default function Home() {
           </svg>
         </header>
 
-        <main className="max-w-2xl mx-auto px-4 py-6 sm:py-8 space-y-5 sm:space-y-6 pb-20">
+        <main className="max-w-2xl mx-auto px-4 py-6 sm:py-8 space-y-4 sm:space-y-5 pb-20">
           <ScoreBoard
             solved={gameState.solvedRiddles.length}
             total={riddles.length}
             score={gameState.score}
           />
 
-          <div className="flex items-center justify-between gap-2">
-            <h2 className="text-lg sm:text-xl font-bold text-[#8B4513]">
-              燈謎題目
-            </h2>
-            {gameState.solvedRiddles.length > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleReset}
-                className="text-xs border-[#E8D5B7] text-[#8B4513]/60 rounded-lg"
-                data-testid="button-reset"
+          <TimerMode
+            isActive={timerActive}
+            onToggle={() => setTimerActive((t) => !t)}
+            solvedCount={gameState.solvedRiddles.length}
+            totalCount={riddles.length}
+            gameComplete={gameComplete}
+            onElapsedChange={setTimerElapsed}
+          />
+
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <h2 className="text-lg sm:text-xl font-bold text-[#8B4513]">燈謎題目</h2>
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                onClick={pickRandomUnsolved}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/60 border border-[#E8D5B7] text-[#8B4513]/70 text-xs font-medium transition-colors"
+                data-testid="button-random-riddle"
+                title="隨機跳轉到未解的題目"
               >
-                重新開始
-              </Button>
-            )}
+                <Shuffle className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">隨機出題</span>
+              </button>
+              <div className="sm:hidden flex items-center gap-1 text-[10px] text-[#8B4513]/30">
+                <Smartphone className="w-3 h-3" />
+                搖一搖抽題
+              </div>
+              {gameState.solvedRiddles.length > 0 && (
+                <>
+                  <button
+                    onClick={() => setShowShareCard(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/60 border border-[#E8D5B7] text-[#8B4513]/70 text-xs font-medium transition-colors"
+                    data-testid="button-share-card"
+                  >
+                    <Share2 className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">分享成績</span>
+                  </button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleReset}
+                    className="text-xs border-[#E8D5B7] text-[#8B4513]/60 rounded-lg h-7"
+                    data-testid="button-reset"
+                  >
+                    重新開始
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
 
-          <div className="space-y-3 sm:space-y-4">
+          <div className="space-y-3 sm:space-y-4" ref={riddleListRef}>
             {riddles.map((riddle, index) => (
               <RiddleCard
                 key={riddle.id}
@@ -217,6 +364,24 @@ export default function Home() {
         total={riddles.length}
         onReset={handleReset}
         onClose={() => setShowCompletion(false)}
+        onShare={() => {
+          setShowCompletion(false);
+          setShowShareCard(true);
+        }}
+      />
+
+      <ShareCard
+        open={showShareCard}
+        onClose={() => setShowShareCard(false)}
+        score={gameState.score}
+        total={riddles.length}
+        solvedCount={gameState.solvedRiddles.length}
+        elapsedTime={timerActive ? timerElapsed : undefined}
+      />
+
+      <EventControl
+        open={showEventControl}
+        onClose={() => setShowEventControl(false)}
       />
     </div>
   );

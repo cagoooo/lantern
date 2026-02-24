@@ -1,6 +1,6 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Trophy, Star, RotateCcw, PartyPopper } from "lucide-react";
+import { Trophy, Star, RotateCcw, PartyPopper, Share2 } from "lucide-react";
 
 interface CompletionModalProps {
   open: boolean;
@@ -8,6 +8,7 @@ interface CompletionModalProps {
   total: number;
   onReset: () => void;
   onClose: () => void;
+  onShare?: () => void;
 }
 
 export function CompletionModal({
@@ -16,6 +17,7 @@ export function CompletionModal({
   total,
   onReset,
   onClose,
+  onShare,
 }: CompletionModalProps) {
   const maxScore = total * 10;
   const percentage = Math.round((score / maxScore) * 100);
@@ -41,7 +43,7 @@ export function CompletionModal({
             </p>
 
             <div className="bg-white/60 rounded-2xl p-5 mb-6 space-y-3">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2">
                 <span className="text-[#8B4513]/70 flex items-center gap-2">
                   <Star className="w-4 h-4 text-[#FFD700]" />
                   總得分
@@ -50,7 +52,7 @@ export function CompletionModal({
                   {score} <span className="text-base text-[#8B4513]/40">/ {maxScore}</span>
                 </span>
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2">
                 <span className="text-[#8B4513]/70 flex items-center gap-2">
                   <PartyPopper className="w-4 h-4 text-[#FF6B6B]" />
                   正確率
@@ -75,7 +77,7 @@ export function CompletionModal({
               )}
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex gap-3 flex-wrap">
               <Button
                 onClick={onReset}
                 className="flex-1 h-12 rounded-xl bg-[#E60012] text-white font-bold"
@@ -84,10 +86,20 @@ export function CompletionModal({
                 <RotateCcw className="w-4 h-4 mr-2" />
                 再玩一次
               </Button>
+              {onShare && (
+                <Button
+                  onClick={onShare}
+                  className="flex-1 h-12 rounded-xl bg-[#FFD700] text-[#8B4513] font-bold"
+                  data-testid="button-share-from-modal"
+                >
+                  <Share2 className="w-4 h-4 mr-2" />
+                  分享成績
+                </Button>
+              )}
               <Button
                 onClick={onClose}
                 variant="outline"
-                className="flex-1 h-12 rounded-xl border-2 border-[#E8D5B7] text-[#8B4513] font-bold"
+                className="w-full h-10 rounded-xl border-2 border-[#E8D5B7] text-[#8B4513]/60 text-sm"
                 data-testid="button-close-modal"
               >
                 關閉

@@ -43,6 +43,12 @@ export function RiddleCard({
     }
   }, [isActive, isSolved]);
 
+  useEffect(() => {
+    if (attempts >= 2 && isActive && !isSolved) {
+      setShowHint(true);
+    }
+  }, [attempts, isActive, isSolved]);
+
   const handleSubmit = async () => {
     if (!answer.trim() || isSubmitting) return;
     setIsSubmitting(true);
@@ -66,6 +72,9 @@ export function RiddleCard({
   };
 
   const numberLabel = String(index + 1).padStart(2, "0");
+  const hintLevel = getHintLevel(attempts);
+  const hints = getProgressiveHints(riddle.id);
+  const currentHints = hints.slice(0, hintLevel);
 
   return (
     <div
@@ -195,11 +204,41 @@ export function RiddleCard({
                         已嘗試 {attempts} 次
                       </span>
                     )}
+                    {hintLevel > 1 && (
+                      <span className="text-xs text-[#FF8C00]/60">
+                        提示等級 {hintLevel}/{hints.length}
+                      </span>
+                    )}
                   </div>
 
-                  {showHint && (
-                    <div className="bg-[#FFF8E7] border border-[#FFD700]/40 rounded-lg p-3 animate-slide-up">
-                      <p className="text-sm text-[#8B4513]">{getHintText(riddle.id)}</p>
+                  {showHint && currentHints.length > 0 && (
+                    <div className="space-y-2 animate-slide-up">
+                      {currentHints.map((hint, i) => (
+                        <div
+                          key={i}
+                          className={`border rounded-lg p-3 ${
+                            i === currentHints.length - 1 && hintLevel > 1
+                              ? "bg-[#FFE8B8] border-[#FFD700]/60 animate-bounce-in"
+                              : "bg-[#FFF8E7] border-[#FFD700]/40"
+                          }`}
+                        >
+                          <div className="flex items-start gap-2">
+                            <Lightbulb
+                              className={`w-3.5 h-3.5 mt-0.5 flex-shrink-0 ${
+                                i === currentHints.length - 1 && hintLevel > 1
+                                  ? "text-[#FF6B6B]"
+                                  : "text-[#FFD700]"
+                              }`}
+                            />
+                            <p className="text-sm text-[#8B4513]">{hint}</p>
+                          </div>
+                        </div>
+                      ))}
+                      {attempts >= 4 && hintLevel < hints.length && (
+                        <p className="text-xs text-[#FF8C00]/50 text-center">
+                          再試一次會解鎖更多提示...
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>
@@ -219,18 +258,64 @@ export function RiddleCard({
   );
 }
 
-function getHintText(riddleId: number): string {
-  const hints: Record<number, string> = {
-    1: "這個動物是十二生肖之一，在草原上跑得很快喔！",
-    2: "想想看，什麼神獸跟水有關？地名裡有「水」的概念。",
-    3: "把字拆開來看：委＋鬼是什麼字？再想想彥士這兩個字。",
-    4: "耳＋東是什麼姓？草字頭＋方是什麼字？珊瑚的珊字...",
-    5: "過年的時候，全家人坐在一起吃年夜飯的活動叫什麼？",
-    6: "一百少一是什麼？百去掉「一」會變成什麼字？",
-    7: "想想看「禾」和「火」合起來是什麼字？禾是綠色的，火是紅色的。",
-    8: "空中的霸王就是「鷹」（英），聯想到哪個縣市呢？",
-    9: "數到十就結束了，第十一本書就是超出想像的、不可能的...",
-    10: "饒舌RAP要一直「又」，很多個「又」放在「木」上面是什麼字？",
+function getHintLevel(attempts: number): number {
+  if (attempts >= 5) return 3;
+  if (attempts >= 3) return 2;
+  return 1;
+}
+
+function getProgressiveHints(riddleId: number): string[] {
+  const hints: Record<number, string[]> = {
+    1: [
+      "這個動物是十二生肖之一，在草原上跑得很快喔！",
+      "人們可以騎在牠背上，古代打仗也會用到牠。",
+      "答案是一個字，跟「騎」有關的動物。",
+    ],
+    2: [
+      "想想看，什麼神獸跟水有關？地名裡有「水」的概念。",
+      "這個神獸會飛會游，是中國最有名的吉祥物。池水就是潭。",
+      "神獸是「龍」，池水是「潭」，合起來是...",
+    ],
+    3: [
+      "把字拆開來看：委＋鬼是什麼字？再想想彥士這兩個字。",
+      "委＋鬼＝魏（姓氏），後面的名字在題目裡已經告訴你了。",
+      "姓「魏」，名字是「彥士」。",
+    ],
+    4: [
+      "耳＋東是什麼姓？草字頭＋方是什麼字？珊瑚的珊字...",
+      "耳東＝陳，草頭方＝芳，珊瑚取第一個字。",
+      "姓「陳」，名字是「芳珊」。",
+    ],
+    5: [
+      "過年的時候，全家人坐在一起吃年夜飯的活動叫什麼？",
+      "大家圍著火爐坐在一起，感覺很溫暖。",
+      "答案是兩個字，跟「爐火」有關的團圓活動。",
+    ],
+    6: [
+      "一百少一是什麼？百去掉「一」會變成什麼字？",
+      "把「百」這個字裡的「一」拿掉，看看剩下什麼。",
+      "百 - 一 ＝ 白。答案是一個顏色。",
+    ],
+    7: [
+      "想想看「禾」和「火」合起來是什麼字？禾是綠色的，火是紅色的。",
+      "禾苗怕蟲吃，火怕水澆熄。這是一個季節。",
+      "禾＋火＝秋。這個季節在夏天和冬天之間。",
+    ],
+    8: [
+      "空中的霸王就是「鷹」（英），聯想到哪個縣市呢？",
+      "「鷹」的台語發音聽起來像哪個地名？跟「義」有關。",
+      "答案是台灣的一個縣市，「嘉」＋「義」。",
+    ],
+    9: [
+      "數到十就結束了，第十一本書就是超出想像的、不可能的...",
+      "「十一」超出了「十」的範圍，就是不能數、不能想的。",
+      "答案是四個字的成語，意思是「難以想像」。",
+    ],
+    10: [
+      "饒舌RAP要一直「又」，很多個「又」放在「木」上面是什麼字？",
+      "三個「又」疊在一起放在「木」上面。",
+      "又又又＋木＝桑。這是一種樹的名字。",
+    ],
   };
-  return hints[riddleId] || "再仔細想想看喔！";
+  return hints[riddleId] || ["再仔細想想看喔！"];
 }

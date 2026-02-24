@@ -14,17 +14,28 @@ Interactive web-based riddle guessing game (猜燈謎) for Shimen Elementary Sch
 - Score tracking with points (10 for first try, 7 for second, 5 for subsequent)
 - Animated floating lanterns, confetti on correct answers
 - Responsive design for mobile/tablet/desktop
-- Hints system for each riddle
-- Completion modal with score summary
+- Dynamic progressive hints (3 levels, auto-show after 2 failed attempts)
+- Completion modal with score summary and share option
 - Game state persisted in localStorage
+- Sound effects system (Web Audio API): correct/wrong/completion sounds with toggle
+- Timer challenge mode with best time tracking
+- Shake-to-pick random riddle (mobile device motion, with iOS permission handling)
+- Share score card (canvas-generated image, download or native share)
+- Event info panel with countdown to March 3, 2026 event date
+- QR Code generation and downloadable poster for the activity
 
 ## Project Structure
-- `client/src/pages/Home.tsx` - Main game page
-- `client/src/components/RiddleCard.tsx` - Individual riddle card with answer input
+- `client/src/pages/Home.tsx` - Main game page with all feature integrations
+- `client/src/components/RiddleCard.tsx` - Individual riddle card with progressive hints
 - `client/src/components/ScoreBoard.tsx` - Progress and score display
 - `client/src/components/FloatingLanterns.tsx` - Animated background lanterns
 - `client/src/components/ConfettiEffect.tsx` - Celebration confetti animation
-- `client/src/components/CompletionModal.tsx` - Game completion dialog
+- `client/src/components/CompletionModal.tsx` - Game completion dialog with share
+- `client/src/components/TimerMode.tsx` - Timer challenge mode with best time
+- `client/src/components/ShareCard.tsx` - Canvas-based share card generator
+- `client/src/components/EventControl.tsx` - Event countdown and QR code poster
+- `client/src/lib/sounds.ts` - Web Audio API sound effects
+- `client/src/hooks/use-shake.ts` - Device motion shake detection hook
 - `server/routes.ts` - API endpoints for riddle data and answer checking
 - `shared/schema.ts` - TypeScript types
 
