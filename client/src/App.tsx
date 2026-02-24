@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, Router } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -9,15 +9,17 @@ import TeacherDashboard from "@/pages/TeacherDashboard";
 import QuestionBank from "@/pages/QuestionBank";
 import ClassBattle from "@/pages/ClassBattle";
 
-function Router() {
+function RouterComponent() {
   return (
-    <Switch>
-      <Route path="/" component={Home} />
-      <Route path="/teacher" component={TeacherDashboard} />
-      <Route path="/questions" component={QuestionBank} />
-      <Route path="/battle" component={ClassBattle} />
-      <Route component={NotFound} />
-    </Switch>
+    <Router base="/lantern">
+      <Switch>
+        <Route path="/" component={Home} />
+        <Route path="/teacher" component={TeacherDashboard} />
+        <Route path="/questions" component={QuestionBank} />
+        <Route path="/battle" component={ClassBattle} />
+        <Route component={NotFound} />
+      </Switch>
+    </Router>
   );
 }
 
@@ -26,7 +28,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
-        <Router />
+        <RouterComponent />
       </TooltipProvider>
     </QueryClientProvider>
   );
