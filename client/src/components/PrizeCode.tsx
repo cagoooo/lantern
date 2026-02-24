@@ -86,7 +86,7 @@ export function PrizeCode({ open, onClose, score, solvedCount, total }: PrizeCod
 
     dCtx.font = "16px 'Noto Sans TC', sans-serif";
     dCtx.fillStyle = "#8B4513";
-    dCtx.fillText(`${profile?.nickname || "匿名"} | ${profile?.className || ""} | 得分 ${score}`, 200, 400);
+    dCtx.fillText(`${profile?.nickname || "未填姓名"} | ${profile?.className || ""} | 得分 ${score}`, 200, 400);
 
     dCtx.font = "12px 'Noto Sans TC', sans-serif";
     dCtx.fillStyle = "#8B4513AA";
@@ -136,7 +136,7 @@ export function PrizeCode({ open, onClose, score, solvedCount, total }: PrizeCod
               </div>
 
               <div className="text-sm text-[#8B4513]/60 space-y-1">
-                <p>{profile?.nickname || "匿名"} | {profile?.className || "未登入"}</p>
+                <p>{profile?.nickname || "未填姓名"} | {profile?.className || "未登入"}</p>
                 <p>得分：{score}分 | 答對 {solvedCount}/{total} 題</p>
               </div>
 

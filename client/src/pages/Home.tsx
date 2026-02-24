@@ -252,8 +252,8 @@ export default function Home() {
 
   const gameComplete = gameState.solvedRiddles.length === (riddles?.length ?? 10);
 
-  const handleStudentLogin = useCallback(async (className: string, seatNumber: string, nickname: string) => {
-    const profile = await saveStudentProfile(className, seatNumber, nickname);
+  const handleStudentLogin = useCallback(async (className: string, seatNumber: string, studentName: string) => {
+    const profile = await saveStudentProfile(className, seatNumber, studentName);
     setStudentProfile(profile);
   }, []);
 
@@ -301,17 +301,22 @@ export default function Home() {
               福
             </div>
             <div className="absolute top-4 right-6 text-5xl sm:text-7xl text-white/15 font-bold select-none">
-              春
+              馬
             </div>
             <div className="absolute bottom-2 left-1/4 text-4xl sm:text-6xl text-white/10 font-bold select-none">
               喜
             </div>
           </div>
+          <img
+            src="/horse-mascot.png"
+            alt=""
+            className="absolute bottom-6 right-2 w-14 h-14 sm:w-20 sm:h-20 opacity-30 select-none pointer-events-none"
+          />
 
           <div className="relative px-4 py-6 sm:py-10 text-center">
             <div className="absolute top-3 left-3 flex items-center gap-1">
               <span className="text-white/60 text-[10px] sm:text-xs truncate max-w-[100px] sm:max-w-none">
-                {studentProfile.className} {studentProfile.nickname}
+                {studentProfile.className} {studentProfile.nickname || studentProfile.className}
               </span>
               <button
                 onClick={handleLogout}
@@ -353,7 +358,7 @@ export default function Home() {
               <LanternIcon />
             </div>
             <p className="text-sm sm:text-lg text-white/80 font-medium">
-              2026 石門國小 Lantern Festival
+              🐴 2026 馬年 石門國小 Lantern Festival
             </p>
             <div className="flex items-center justify-center gap-1 mt-2">
               <Sparkles className="w-3.5 h-3.5 text-[#FFD700] animate-glow" />
@@ -522,7 +527,7 @@ export default function Home() {
             </Link>
           </div>
 
-          <div className="text-center pt-4 pb-8">
+          <div className="text-center pt-4 pb-2">
             <div className="inline-flex items-center gap-2 text-[#8B4513]/40 text-sm">
               <CloudIcon />
               <span>石門國小 2026 元宵節</span>
@@ -530,6 +535,26 @@ export default function Home() {
             </div>
           </div>
         </main>
+
+        <footer className="relative z-10 py-5 px-6 text-center border-t border-[#E8D5B7]/50 bg-gradient-to-t from-[#FFE0A0]/30 to-transparent">
+          <div className="flex items-center justify-center gap-3 mb-2">
+            <span className="text-xl">🏮</span>
+            <img src="/horse-mascot.png" alt="馬年吉祥物" className="w-10 h-10 object-contain" />
+            <span className="text-xl">🎆</span>
+          </div>
+          <p className="text-sm text-[#8B4513]/60">
+            © 2026 石門國小元宵猜燈謎活動 Made with ❤️ by{" "}
+            <a
+              href="https://www.smes.tyc.edu.tw/modules/tadnews/page.php?ncsn=11&nsn=16#a5"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-bold text-[#E60012] underline hover:text-[#CC0010] transition-colors"
+              data-testid="link-school-website"
+            >
+              阿凱老師
+            </a>
+          </p>
+        </footer>
       </div>
 
       <CompletionModal

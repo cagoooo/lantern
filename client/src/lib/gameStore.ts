@@ -160,7 +160,7 @@ export async function submitScore(
     const docRef = doc(db, COLLECTION_SCORES, uid);
     await setDoc(docRef, {
       uid,
-      nickname: profile?.nickname || "匿名",
+      nickname: profile?.nickname || "未填姓名",
       className: profile?.className || "",
       seatNumber: profile?.seatNumber || "",
       score,

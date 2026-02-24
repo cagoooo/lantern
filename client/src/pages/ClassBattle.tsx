@@ -150,6 +150,25 @@ export default function ClassBattle() {
             </Button>
           </Link>
         </div>
+
+        <footer className="py-5 text-center mt-4">
+          <div className="flex items-center justify-center gap-3 mb-2">
+            <span className="text-lg">🏮</span>
+            <span className="text-lg">🐴</span>
+            <span className="text-lg">🎆</span>
+          </div>
+          <p className="text-sm text-[#8B4513]/60">
+            © 2026 石門國小元宵猜燈謎活動 Made with ❤️ by{" "}
+            <a
+              href="https://www.smes.tyc.edu.tw/modules/tadnews/page.php?ncsn=11&nsn=16#a5"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-bold text-[#E60012] underline hover:text-[#CC0010] transition-colors"
+            >
+              阿凱老師
+            </a>
+          </p>
+        </footer>
       </div>
     </div>
   );

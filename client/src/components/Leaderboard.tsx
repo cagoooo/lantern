@@ -95,7 +95,7 @@ export function Leaderboard({ open, onClose }: LeaderboardProps) {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-bold text-[#8B4513] text-sm truncate">
-                        {entry.nickname || "匿名"}
+                        {entry.nickname || "未填姓名"}
                       </p>
                       {entry.className && (
                         <p className="text-xs text-[#8B4513]/50">
