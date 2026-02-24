@@ -100,20 +100,24 @@ export default function QuestionBank() {
           >
             <div className="space-y-3">
               <Input
+                id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="管理員 Email"
                 className="h-12 rounded-xl border-2 border-[#E8D5B7] text-base"
                 required
+                autoComplete="username"
               />
               <Input
+                id="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="請輸入密碼"
                 className="h-12 rounded-xl border-2 border-[#E8D5B7] text-base"
                 required
+                autoComplete="current-password"
               />
             </div>
             {error && <p className="text-sm text-red-500">{error}</p>}

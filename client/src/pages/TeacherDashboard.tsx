@@ -151,23 +151,27 @@ export default function TeacherDashboard() {
               <div className="space-y-2">
                 <label className="text-xs font-bold text-[#8B4513]/50 ml-1 uppercase">帳號 (Email)</label>
                 <Input
+                  id="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@school.edu.tw"
                   className="h-12 rounded-xl border-2 border-[#E8D5B7] text-base px-4 focus:ring-2 focus:ring-[#E60012] transition-all"
                   required
+                  autoComplete="username"
                 />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-bold text-[#8B4513]/50 ml-1 uppercase">密碼 (Password)</label>
                 <Input
+                  id="password"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   className="h-12 rounded-xl border-2 border-[#E8D5B7] text-base px-4 focus:ring-2 focus:ring-[#E60012] transition-all"
                   required
+                  autoComplete="current-password"
                 />
               </div>
             </div>
