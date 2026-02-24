@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { GraduationCap, Loader2 } from "lucide-react";
+import { useLocation } from "wouter";
 
 interface StudentLoginProps {
   onLogin: (className: string, seatNumber: string, studentName: string) => Promise<void>;
@@ -18,6 +19,17 @@ export function StudentLogin({ onLogin }: StudentLoginProps) {
   const [studentName, setStudentName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [, setLocation] = useLocation();
+  const [clickCount, setClickCount] = useState(0);
+
+  const handleSecretClick = () => {
+    const newCount = clickCount + 1;
+    if (newCount >= 5) {
+      setLocation("/teacher");
+    } else {
+      setClickCount(newCount);
+    }
+  };
 
   const handleSubmit = async () => {
     if (!grade) {
@@ -59,8 +71,18 @@ export function StudentLogin({ onLogin }: StudentLoginProps) {
       <div className="flex-1 flex items-center justify-center p-4">
         <Card className="w-full max-w-sm border-2 border-[#E60012] bg-white shadow-xl shadow-[#E60012]/10 rounded-2xl overflow-hidden">
           <div className="bg-gradient-to-b from-[#E60012] to-[#CC0010] p-6 text-center relative overflow-hidden">
-            <div className="absolute top-1 left-3 text-5xl text-white/10 font-bold select-none">馬</div>
-            <div className="absolute bottom-1 right-3 text-4xl text-white/10 font-bold select-none">福</div>
+            <div
+              className="absolute top-1 left-3 text-5xl text-white/10 font-bold select-none cursor-default"
+              onClick={handleSecretClick}
+            >
+              馬
+            </div>
+            <div
+              className="absolute bottom-1 right-3 text-4xl text-white/10 font-bold select-none cursor-default"
+              onClick={handleSecretClick}
+            >
+              福
+            </div>
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white/20 mb-3">
               <GraduationCap className="w-8 h-8 text-white" />
             </div>
@@ -147,9 +169,6 @@ export function StudentLogin({ onLogin }: StudentLoginProps) {
               )}
             </Button>
 
-            <p className="text-center text-xs text-[#8B4513]/40 mt-2">
-              石門國小 2026 元宵猜燈謎活動
-            </p>
           </div>
         </Card>
       </div>
@@ -161,16 +180,16 @@ export function StudentLogin({ onLogin }: StudentLoginProps) {
           <span className="text-lg">🎆</span>
         </div>
         <p className="text-sm text-[#8B4513]/60 mt-1">
-          © 2026 石門國小元宵猜燈謎活動 Made with ❤️ by{" "}
+          © 2026 石門國小元宵猜燈謎活動 🏮{" "}
           <a
             href="https://www.smes.tyc.edu.tw/modules/tadnews/page.php?ncsn=11&nsn=16#a5"
             target="_blank"
             rel="noopener noreferrer"
             className="font-bold text-[#E60012] underline hover:text-[#CC0010] transition-colors"
-            data-testid="link-school-website"
           >
             阿凱老師
-          </a>
+          </a>{" "}
+          製作 ✨
         </p>
       </footer>
     </div>

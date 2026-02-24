@@ -7,7 +7,8 @@ import {
   Lock, ArrowLeft, Plus, Pencil, Trash2, Save,
   X, Loader2, BookOpen,
 } from "lucide-react";
-import { apiRequest } from "@/lib/queryClient";
+import { getRiddles, verifyTeacherCode } from "@/lib/gameStore";
+import { riddles as staticRiddles } from "@/lib/riddles";
 import { Link } from "wouter";
 
 type PublicRiddle = { id: number; question: string; hint: string };
@@ -31,92 +32,52 @@ export default function QuestionBank() {
   const [saving, setSaving] = useState(false);
   const queryClient = useQueryClient();
 
-  const { data: riddles, isLoading } = useQuery<PublicRiddle[]>({
-    queryKey: ["/api/riddles"],
-  });
+  const [riddles, setRiddles] = useState<PublicRiddle[] | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    getRiddles().then(data => {
+      setRiddles(data);
+      setIsLoading(false);
+    });
+  }, []);
 
   const handleLogin = async () => {
     try {
-      const res = await fetch("/api/admin/verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: code.trim() }),
-      });
-      if (res.ok) {
-        TEACHER_CODE = code.trim();
+      const isOk = await verifyTeacherCode(code.trim());
+      if (isOk) {
         setAuthenticated(true);
         setError("");
       } else {
         setError("密碼錯誤");
       }
     } catch {
-      setError("連線失敗，請再試一次");
+      setError("發生錯誤");
     }
   };
 
   const handleEdit = async (id: number) => {
-    try {
-      const res = await fetch(`/api/admin/riddles/${id}`, {
-        headers: { "x-teacher-code": TEACHER_CODE },
+    const riddle = staticRiddles.find(r => r.id === id);
+    if (riddle) {
+      setForm({
+        question: riddle.question,
+        hint: riddle.hint,
+        answers: riddle.answers.join(", "),
+        explanation: riddle.explanation || "",
       });
-      if (res.ok) {
-        const data = await res.json();
-        setForm({
-          question: data.question,
-          hint: data.hint,
-          answers: data.answers.join(", "),
-          explanation: data.explanation || "",
-        });
-        setEditing(id);
-        setAdding(false);
-      }
-    } catch {}
+      setEditing(id);
+      setAdding(false);
+    }
   };
 
   const handleSave = async () => {
-    if (!form.question.trim() || !form.hint.trim() || !form.answers.trim()) return;
-    setSaving(true);
-
-    try {
-      const body = {
-        question: form.question.trim(),
-        hint: form.hint.trim(),
-        answers: form.answers.split(",").map((a) => a.trim()).filter(Boolean),
-        explanation: form.explanation.trim(),
-      };
-
-      const headers = { "x-teacher-code": TEACHER_CODE };
-      if (editing !== null) {
-        await fetch(`/api/admin/riddles/${editing}`, {
-          method: "PUT",
-          headers: { ...headers, "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
-      } else if (adding) {
-        await fetch("/api/admin/riddles", {
-          method: "POST",
-          headers: { ...headers, "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
-      }
-
-      queryClient.invalidateQueries({ queryKey: ["/api/riddles"] });
-      setEditing(null);
-      setAdding(false);
-      setForm({ question: "", hint: "", answers: "", explanation: "" });
-    } catch {}
-    setSaving(false);
+    alert("目前專案已轉為靜態架構，如需修改題目請直接編輯 client/src/lib/riddles.ts 檔案。");
+    setEditing(null);
+    setAdding(false);
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm("確定要刪除這道題目嗎？")) return;
-    try {
-      await fetch(`/api/admin/riddles/${id}`, {
-        method: "DELETE",
-        headers: { "x-teacher-code": TEACHER_CODE },
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/riddles"] });
-    } catch {}
+    alert("目前專案已轉為靜態架構，如需刪除題目請直接編輯 client/src/lib/riddles.ts 檔案。");
   };
 
   if (!authenticated) {
@@ -300,7 +261,7 @@ export default function QuestionBank() {
             <span className="text-lg">🎆</span>
           </div>
           <p className="text-sm text-[#8B4513]/60">
-            © 2026 石門國小元宵猜燈謎活動 Made with ❤️ by{" "}
+            © 2026 石門國小元宵猜燈謎活動 🏮{" "}
             <a
               href="https://www.smes.tyc.edu.tw/modules/tadnews/page.php?ncsn=11&nsn=16#a5"
               target="_blank"
@@ -308,7 +269,8 @@ export default function QuestionBank() {
               className="font-bold text-[#E60012] underline hover:text-[#CC0010] transition-colors"
             >
               阿凱老師
-            </a>
+            </a>{" "}
+            製作 ✨
           </p>
         </footer>
       </div>

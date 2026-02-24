@@ -1,4 +1,4 @@
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Trophy, Star, RotateCcw, PartyPopper, Share2 } from "lucide-react";
 
@@ -25,6 +25,10 @@ export function CompletionModal({
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md bg-gradient-to-b from-[#FFF8E7] to-[#FFF0C8] border-2 border-[#FFD700] rounded-2xl p-0 overflow-hidden">
+        <DialogTitle className="sr-only">恭喜完成挑戰</DialogTitle>
+        <DialogDescription className="sr-only">
+          顯示完成所有燈謎後的總分與正確率統計資訊。
+        </DialogDescription>
         <div className="relative">
           <div className="absolute inset-0 bg-gradient-to-b from-[#E60012]/10 to-transparent" />
 

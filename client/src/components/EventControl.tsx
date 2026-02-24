@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { QrCode, Calendar, Clock, X, Download } from "lucide-react";
+import { QrCode, Calendar, Clock, Download } from "lucide-react";
 import QRCode from "qrcode";
 
 interface EventControlProps {
@@ -29,7 +29,7 @@ export function EventControl({ open, onClose }: EventControlProps) {
         width: 280,
         margin: 2,
         color: { dark: "#E60012", light: "#FFFFFF" },
-      }).then(setQrDataUrl).catch(() => {});
+      }).then(setQrDataUrl).catch(() => { });
     }
   }, [open]);
 
@@ -96,7 +96,7 @@ export function EventControl({ open, onClose }: EventControlProps) {
     ctx.font = "500 20px 'Noto Sans TC', sans-serif";
     ctx.fillText("\u6D3B\u52D5\u65E5\u671F\uFF1A2026\u5E74 3\u6708 3\u65E5\uFF08\u4E8C\uFF09", w / 2, 225);
     ctx.font = "400 16px 'Noto Sans TC', sans-serif";
-    ctx.fillText("\u5B78\u52D9\u8655\u4E3B\u8FA6", w / 2, 250);
+    ctx.fillText("阿凱老師製作 ✨", w / 2, 250);
 
     const qrImg = new Image();
     qrImg.onload = () => {
@@ -129,7 +129,7 @@ export function EventControl({ open, onClose }: EventControlProps) {
 
       ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
       ctx.font = "400 13px 'Noto Sans TC', sans-serif";
-      ctx.fillText("\u77F3\u9580\u570B\u5C0F\u5B78\u52D9\u8655 \u88FD\u4F5C", w / 2, h - 50);
+      ctx.fillText("石門國小阿凱老師 製作 ✨🏮", w / 2, h - 50);
 
       const dataUrl = canvas.toDataURL("image/png");
       const link = document.createElement("a");
@@ -143,25 +143,25 @@ export function EventControl({ open, onClose }: EventControlProps) {
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md bg-[#FFF8E7] border-2 border-[#FFD700] rounded-2xl p-5">
+        <DialogTitle className="sr-only">活動資訊</DialogTitle>
+        <DialogDescription className="sr-only">
+          查看石門國小元宵猜燈謎活動的時間、地點與 QR Code 資訊。
+        </DialogDescription>
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-bold text-[#8B4513] flex items-center gap-2">
               <Calendar className="w-5 h-5 text-[#E60012]" />
               活動資訊
             </h3>
-            <button onClick={onClose} className="text-[#8B4513]/40">
-              <X className="w-5 h-5" />
-            </button>
           </div>
 
           <div
-            className={`rounded-xl p-4 text-center ${
-              isDuringEvent
-                ? "bg-green-50 border border-green-200"
-                : isBeforeEvent
-                  ? "bg-[#FFF0C8] border border-[#FFD700]/30"
-                  : "bg-gray-50 border border-gray-200"
-            }`}
+            className={`rounded-xl p-4 text-center ${isDuringEvent
+              ? "bg-green-50 border border-green-200"
+              : isBeforeEvent
+                ? "bg-[#FFF0C8] border border-[#FFD700]/30"
+                : "bg-gray-50 border border-gray-200"
+              }`}
           >
             <div className="flex items-center justify-center gap-2 mb-2">
               <Clock className="w-4 h-4" />

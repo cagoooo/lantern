@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,43 +6,48 @@ import { Input } from "@/components/ui/input";
 import {
   BarChart3, Users, CheckCircle, TrendingUp,
   Lock, ArrowLeft, RefreshCw, Loader2,
+  Search, Download, Filter, GraduationCap,
+  ClipboardList, ChevronRight
 } from "lucide-react";
-import { getStatsForTeacher, getLeaderboard, getClassLeaderboard, type ScoreEntry } from "@/lib/gameStore";
+import { getStatsForTeacher, type ScoreEntry, getRiddles, isTeacherAuthenticated, loginTeacher, logoutTeacher } from "@/lib/gameStore";
 import { Link } from "wouter";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type PublicRiddle = { id: number; question: string; hint: string };
 
-let TEACHER_CODE = "";
-
 export default function TeacherDashboard() {
-  const [authenticated, setAuthenticated] = useState(false);
-  const [code, setCode] = useState("");
+  const [authenticated, setAuthenticated] = useState(isTeacherAuthenticated());
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [stats, setStats] = useState<{
     totalPlayers: number;
     classStats: Record<string, number>;
     riddleStats: Record<number, { attempts: number; solved: number }>;
+    allScores: ScoreEntry[];
   } | null>(null);
-  const [leaderboard, setLeaderboard] = useState<ScoreEntry[]>([]);
-  const [classData, setClassData] = useState<Record<string, { totalScore: number; count: number; avgScore: number }>>({});
   const [loading, setLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [classFilter, setClassFilter] = useState("all");
 
-  const { data: riddles } = useQuery<PublicRiddle[]>({
-    queryKey: ["/api/riddles"],
-  });
+  const [riddles, setRiddles] = useState<PublicRiddle[] | null>(null);
+
+  useEffect(() => {
+    getRiddles().then(data => setRiddles(data));
+  }, []);
 
   const loadStats = useCallback(async () => {
     setLoading(true);
     try {
-      const [s, lb, cd] = await Promise.all([
-        getStatsForTeacher(),
-        getLeaderboard(100),
-        getClassLeaderboard(),
-      ]);
+      const s = await getStatsForTeacher();
       setStats(s);
-      setLeaderboard(lb);
-      setClassData(cd);
-    } catch {}
+    } catch { }
     setLoading(false);
   }, []);
 
@@ -51,55 +56,125 @@ export default function TeacherDashboard() {
   }, [authenticated, loadStats]);
 
   const handleLogin = async () => {
+    if (!email.trim() || !password.trim()) return;
     try {
-      const res = await fetch("/api/admin/verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: code.trim() }),
-      });
-      if (res.ok) {
-        TEACHER_CODE = code.trim();
-        setAuthenticated(true);
-        setError("");
+      await loginTeacher(email.trim(), password.trim());
+      setAuthenticated(true);
+      setError("");
+    } catch (err: any) {
+      if (err.code === "auth/user-not-found" || err.code === "auth/wrong-password" || err.code === "auth/invalid-credential") {
+        setError("帳號或密碼錯誤");
       } else {
-        setError("密碼錯誤");
+        setError("登入失敗，請確認已在 Firebase 建立帳號");
       }
-    } catch {
-      setError("連線失敗，請再試一次");
     }
+  };
+
+  const handleLogout = async () => {
+    await logoutTeacher();
+    setAuthenticated(false);
+  };
+
+  const filteredStudents = useMemo(() => {
+    if (!stats?.allScores) return [];
+    return stats.allScores.filter(s => {
+      const matchesSearch = s.nickname.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        s.className?.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesClass = classFilter === "all" || s.className === classFilter;
+      return matchesSearch && matchesClass;
+    });
+  }, [stats?.allScores, searchQuery, classFilter]);
+
+  const classes = useMemo(() => {
+    if (!stats?.allScores) return [];
+    return Array.from(new Set(stats.allScores.map(s => s.className).filter(Boolean))).sort();
+  }, [stats?.allScores]);
+
+  const completionDistribution = useMemo(() => {
+    if (!stats?.allScores) return { bins: [0, 0, 0, 0, 0], labels: ["0題", "1-3題", "4-6題", "7-9題", "10題"] };
+    const bins = [0, 0, 0, 0, 0];
+    stats.allScores.forEach(s => {
+      if (s.solvedCount === 0) bins[0]++;
+      else if (s.solvedCount <= 3) bins[1]++;
+      else if (s.solvedCount <= 6) bins[2]++;
+      else if (s.solvedCount <= 9) bins[3]++;
+      else bins[4]++;
+    });
+    return { bins, labels: ["0題", "1-3題", "4-6題", "7-9題", "10題"] };
+  }, [stats?.allScores]);
+
+  const exportToCSV = () => {
+    if (!stats?.allScores) return;
+
+    // Create CSV content with BOM for Excel UTF-8 support
+    const BOM = "\uFEFF";
+    const headers = ["班級", "座號", "姓名", "得分", "通關數", "完成時間"];
+    const rows = stats.allScores.map(s => [
+      s.className || "",
+      s.seatNumber || "",
+      s.nickname,
+      s.score,
+      s.solvedCount,
+      s.createdAt ? new Date(s.createdAt as any).toLocaleString() : ""
+    ]);
+
+    const csvContent = BOM + [headers, ...rows].map(row => row.join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `猜燈謎活動成績匯出_${new Date().toLocaleDateString()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   if (!authenticated) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-[#FFF8E7] to-[#FFE8B8] flex items-center justify-center p-4">
-        <Card className="w-full max-w-sm border-2 border-[#E60012] rounded-2xl overflow-hidden shadow-xl">
-          <div className="bg-gradient-to-r from-[#E60012] to-[#CC0010] p-6 text-center">
-            <Lock className="w-10 h-10 text-white mx-auto mb-2" />
-            <h2 className="text-xl font-bold text-white">老師儀表板</h2>
-            <p className="text-white/70 text-sm">請輸入教師密碼</p>
+        <Card className="w-full max-w-sm border-2 border-[#E60012] rounded-3xl overflow-hidden shadow-2xl">
+          <div className="bg-gradient-to-r from-[#E60012] to-[#CC0010] p-8 text-center">
+            <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
+              <Lock className="w-10 h-10 text-white" />
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-1">老師登入</h2>
+            <p className="text-white/70 text-sm">請輸入教師管理密碼以查看數據</p>
           </div>
-          <div className="p-5 space-y-4">
-            <Input
-              type="password"
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              placeholder="請輸入密碼"
-              className="h-12 rounded-xl border-2 border-[#E8D5B7] text-base"
-              data-testid="input-teacher-code"
-              onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-            />
-            {error && <p className="text-sm text-red-500">{error}</p>}
+          <div className="p-8 space-y-4 bg-white">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-[#8B4513]/50 ml-1 uppercase">帳號 (Email)</label>
+                <Input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="teacher@smes.edu.tw"
+                  className="h-12 rounded-xl border-2 border-[#E8D5B7] text-base px-4 focus:ring-2 focus:ring-[#E60012] transition-all"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-[#8B4513]/50 ml-1 uppercase">密碼 (Password)</label>
+                <Input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="h-12 rounded-xl border-2 border-[#E8D5B7] text-base px-4 focus:ring-2 focus:ring-[#E60012] transition-all"
+                  onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+                />
+              </div>
+              {error && <p className="text-sm text-red-500 font-medium px-2">{error}</p>}
+            </div>
             <Button
               onClick={handleLogin}
-              className="w-full h-12 rounded-xl bg-[#E60012] text-white font-bold"
-              data-testid="button-teacher-login"
+              className="w-full h-14 rounded-2xl bg-[#E60012] hover:bg-[#CC0010] text-white text-lg font-bold shadow-lg shadow-red-200 transition-all transform hover:scale-[1.02] active:scale-[0.98]"
             >
-              登入
+              進入管理後台
             </Button>
             <Link href="/">
-              <Button variant="outline" className="w-full h-10 rounded-xl border-[#E8D5B7]">
+              <Button variant="ghost" className="w-full h-10 text-[#8B4513] hover:bg-[#FFF8E7] rounded-xl">
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                返回遊戲
+                返回首頁
               </Button>
             </Link>
           </div>
@@ -109,182 +184,242 @@ export default function TeacherDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#FFF8E7] to-[#FFE8B8] p-4 sm:p-6">
-      <div className="max-w-4xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+    <div className="min-h-screen bg-[#FDFCF0] p-4 sm:p-8">
+      <div className="max-w-6xl mx-auto space-y-8">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
             <Link href="/">
-              <Button variant="outline" size="sm" className="rounded-xl border-[#E8D5B7]">
-                <ArrowLeft className="w-4 h-4" />
+              <Button variant="outline" size="icon" className="rounded-full border-[#E8D5B7] text-[#8B4513] hover:bg-[#FFF8E7]">
+                <ArrowLeft className="w-5 h-5" />
               </Button>
             </Link>
-            <h1 className="text-2xl font-bold text-[#E60012]">
-              <BarChart3 className="w-6 h-6 inline mr-2" />
-              教師儀表板
-            </h1>
+            <div>
+              <h1 className="text-3xl font-black text-[#E60012] flex items-center gap-2">
+                <BarChart3 className="w-8 h-8" />
+                老師數據中心
+              </h1>
+              <p className="text-[#8B4513]/60 font-medium">即時掌握燈謎活動參與進度</p>
+            </div>
           </div>
-          <Button
-            onClick={loadStats}
-            disabled={loading}
-            variant="outline"
-            size="sm"
-            className="rounded-xl border-[#E8D5B7]"
-            data-testid="button-refresh-stats"
-          >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={handleLogout}
+              variant="outline"
+              className="rounded-xl border-red-200 text-red-500 h-11 px-6 font-bold hover:bg-red-50"
+            >
+              登出
+            </Button>
+            <Button
+              onClick={exportToCSV}
+              disabled={!stats}
+              variant="outline"
+              className="rounded-xl border-[#E8D5B7] text-[#8B4513] h-11 px-6 font-bold hover:bg-[#E8D5B7]/20"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              匯出 CSV
+            </Button>
+            <Button
+              onClick={loadStats}
+              disabled={loading}
+              className="rounded-xl bg-[#E60012] text-white h-11 w-11 p-0 shadow-lg shadow-red-100"
+            >
+              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <RefreshCw className="w-5 h-5" />}
+            </Button>
+          </div>
         </div>
 
         {loading && !stats ? (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-8 h-8 animate-spin text-[#E60012]" />
+          <div className="flex flex-col items-center justify-center py-32 space-y-4">
+            <div className="relative">
+              <Loader2 className="w-12 h-12 animate-spin text-[#E60012]" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-2 h-2 bg-[#E60012] rounded-full" />
+              </div>
+            </div>
+            <p className="text-[#8B4513] font-bold animate-pulse">正在為您準備最準確的數據...</p>
           </div>
         ) : stats ? (
-          <>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <Card className="p-4 rounded-xl border-[#E8D5B7] bg-white/80 text-center">
-                <Users className="w-6 h-6 text-[#E60012] mx-auto mb-1" />
-                <p className="text-2xl font-bold text-[#8B4513]">{stats.totalPlayers}</p>
-                <p className="text-xs text-[#8B4513]/50">總參與人數</p>
-              </Card>
-              <Card className="p-4 rounded-xl border-[#E8D5B7] bg-white/80 text-center">
-                <BarChart3 className="w-6 h-6 text-[#FFD700] mx-auto mb-1" />
-                <p className="text-2xl font-bold text-[#8B4513]">
-                  {Object.keys(stats.classStats).length}
-                </p>
-                <p className="text-xs text-[#8B4513]/50">參與班級數</p>
-              </Card>
-              <Card className="p-4 rounded-xl border-[#E8D5B7] bg-white/80 text-center">
-                <CheckCircle className="w-6 h-6 text-green-500 mx-auto mb-1" />
-                <p className="text-2xl font-bold text-[#8B4513]">
-                  {leaderboard.filter((e) => e.solvedCount >= 10).length}
-                </p>
-                <p className="text-xs text-[#8B4513]/50">全部通關</p>
-              </Card>
-              <Card className="p-4 rounded-xl border-[#E8D5B7] bg-white/80 text-center">
-                <TrendingUp className="w-6 h-6 text-blue-500 mx-auto mb-1" />
-                <p className="text-2xl font-bold text-[#8B4513]">
-                  {leaderboard.length > 0 ? Math.round(leaderboard.reduce((s, e) => s + e.score, 0) / leaderboard.length) : 0}
-                </p>
-                <p className="text-xs text-[#8B4513]/50">平均分數</p>
-              </Card>
+          <div className="space-y-8">
+            {/* Quick Stats Grid */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+              {[
+                { label: "總參與人數", value: stats.totalPlayers, icon: Users, color: "text-blue-500", bg: "bg-blue-50" },
+                { label: "平均分數", value: stats.totalPlayers > 0 ? Math.round(stats.allScores.reduce((a, b) => a + b.score, 0) / stats.totalPlayers) : 0, icon: TrendingUp, color: "text-orange-500", bg: "bg-orange-50" },
+                { label: "全通關人數", value: stats.allScores.filter(s => s.solvedCount >= 10).length, icon: CheckCircle, color: "text-green-500", bg: "bg-green-50" },
+                { label: "參與班級數", value: Object.keys(stats.classStats).length, icon: GraduationCap, color: "text-purple-500", bg: "bg-purple-50" },
+              ].map((item, idx) => (
+                <Card key={idx} className="p-6 rounded-3xl border-none shadow-sm hover:shadow-md transition-shadow bg-white overflow-hidden relative group">
+                  <div className={`absolute top-0 right-0 w-24 h-24 ${item.bg} rounded-full -mr-8 -mt-8 transition-transform group-hover:scale-110`} />
+                  <div className="relative">
+                    <item.icon className={`w-8 h-8 ${item.color} mb-4`} />
+                    <p className="text-3xl font-black text-[#8B4513]">{item.value}</p>
+                    <p className="text-sm font-bold text-[#8B4513]/40 uppercase tracking-wider">{item.label}</p>
+                  </div>
+                </Card>
+              ))}
             </div>
 
-            <Card className="rounded-2xl border-[#E8D5B7] bg-white/80 overflow-hidden">
-              <div className="bg-[#E60012]/10 p-3 border-b border-[#E8D5B7]">
-                <h3 className="font-bold text-[#E60012]">各班參與情況</h3>
-              </div>
-              <div className="p-4">
-                {Object.keys(stats.classStats).length === 0 ? (
-                  <p className="text-[#8B4513]/50 text-center py-4">尚無班級資料</p>
-                ) : (
-                  <div className="space-y-2">
-                    {Object.entries(stats.classStats)
-                      .sort((a, b) => b[1] - a[1])
-                      .map(([name, count]) => {
-                        const cd = classData[name];
-                        return (
-                          <div key={name} className="flex items-center gap-3 p-2 bg-[#FFF8E7] rounded-lg">
-                            <span className="font-bold text-sm text-[#8B4513] w-24">{name}</span>
-                            <div className="flex-1 bg-[#E8D5B7]/30 rounded-full h-6 overflow-hidden">
-                              <div
-                                className="bg-gradient-to-r from-[#E60012] to-[#FF6B6B] h-full rounded-full flex items-center justify-end pr-2"
-                                style={{ width: `${Math.min(100, (count / Math.max(...Object.values(stats.classStats))) * 100)}%` }}
-                              >
-                                <span className="text-[10px] text-white font-bold">{count}人</span>
-                              </div>
-                            </div>
-                            {cd && (
-                              <span className="text-xs text-[#8B4513]/50 w-20 text-right">
-                                均{Math.round(cd.avgScore)}分
-                              </span>
-                            )}
-                          </div>
-                        );
-                      })}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Detailed Student List */}
+              <Card className="lg:col-span-2 rounded-3xl border-none shadow-sm bg-white overflow-hidden">
+                <div className="p-6 border-b border-[#F0F0F0] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <h3 className="text-xl font-bold text-[#8B4513] flex items-center gap-2">
+                    <ClipboardList className="w-5 h-5 text-[#E60012]" />
+                    學生實戰紀錄
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8B4513]/30" />
+                      <Input
+                        placeholder="搜尋學生或班級..."
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                        className="pl-9 h-10 w-full sm:w-48 rounded-xl border-[#F0F0F0] text-sm focus:ring-[#E60012]"
+                      />
+                    </div>
+                    <Select value={classFilter} onValueChange={setClassFilter}>
+                      <SelectTrigger className="w-28 h-10 rounded-xl border-[#F0F0F0] text-sm">
+                        <Filter className="w-3 h-3 mr-2" />
+                        <SelectValue placeholder="班級" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">所有班級</SelectItem>
+                        {classes.map(c => (
+                          <SelectItem key={c} value={c as string}>{c}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                )}
-              </div>
-            </Card>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left">
+                    <thead className="bg-[#FAF9F6] text-[#8B4513]/50 text-xs font-bold uppercase tracking-wider">
+                      <tr>
+                        <th className="px-6 py-4">學生</th>
+                        <th className="px-6 py-4">班級 / 座號</th>
+                        <th className="px-6 py-4 text-center">得分</th>
+                        <th className="px-6 py-4 text-center">通關數</th>
+                        <th className="px-6 py-4 text-right">進度條</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#F0F0F0]">
+                      {filteredStudents.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="px-6 py-12 text-center text-[#8B4513]/40 font-medium">
+                            未找到符合條件的學生資料
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredStudents.slice(0, 50).map((s) => (
+                          <tr key={s.uid} className="hover:bg-[#FFF8E7]/30 transition-colors">
+                            <td className="px-6 py-4 font-bold text-[#8B4513]">{s.nickname}</td>
+                            <td className="px-6 py-4">
+                              <span className="text-xs bg-[#E8D5B7]/20 text-[#8B4513] px-2 py-1 rounded-md font-bold">
+                                {s.className} {s.seatNumber}號
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-center font-black text-[#E60012]">{s.score}</td>
+                            <td className="px-6 py-4 text-center text-sm font-bold text-[#8B4513]/60">{s.solvedCount} / 10</td>
+                            <td className="px-6 py-4">
+                              <div className="w-24 ml-auto h-2 bg-[#F0F0F0] rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-gradient-to-r from-[#FF6B6B] to-[#E60012] rounded-full"
+                                  style={{ width: `${(s.solvedCount / 10) * 100}%` }}
+                                />
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                  {filteredStudents.length > 50 && (
+                    <div className="p-4 text-center bg-[#FAF9F6] text-xs text-[#8B4513]/50 font-bold">
+                      僅顯示前 50 筆資料，建議使用搜尋功能或匯出 CSV 查看完整名單
+                    </div>
+                  )}
+                </div>
+              </Card>
 
-            <Card className="rounded-2xl border-[#E8D5B7] bg-white/80 overflow-hidden">
-              <div className="bg-[#FFD700]/20 p-3 border-b border-[#E8D5B7]">
-                <h3 className="font-bold text-[#8B4513]">各題答題分析</h3>
-              </div>
-              <div className="p-4">
-                {riddles && riddles.length > 0 ? (
-                  <div className="space-y-2">
-                    {riddles.map((r) => {
-                      const s = stats.riddleStats[r.id] || { attempts: 0, solved: 0 };
-                      const rate = s.attempts > 0 ? Math.round((s.solved / (s.solved + (s.attempts - s.solved))) * 100) : 0;
+              {/* Sidebar Charts */}
+              <div className="space-y-8">
+                {/* Completion Distribution */}
+                <Card className="rounded-3xl border-none shadow-sm bg-white p-6">
+                  <h3 className="text-lg font-bold text-[#8B4513] mb-6 flex items-center justify-between">
+                    通關題數分佈
+                    <span className="text-[10px] text-[#8B4513]/40 uppercase font-bold tracking-tighter">人數統計</span>
+                  </h3>
+                  <div className="space-y-5">
+                    {completionDistribution.labels.map((label, i) => {
+                      const count = completionDistribution.bins[i];
+                      const percentage = stats.totalPlayers > 0 ? (count / stats.totalPlayers) * 100 : 0;
                       return (
-                        <div key={r.id} className="flex items-center gap-3 p-2 bg-[#FFF8E7] rounded-lg">
-                          <span className="text-sm font-bold text-[#E60012] w-6">#{r.id}</span>
-                          <span className="flex-1 text-sm text-[#8B4513] truncate">{r.question}</span>
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            <div className="w-16 bg-[#E8D5B7]/30 rounded-full h-4 overflow-hidden">
-                              <div
-                                className={`h-full rounded-full ${
-                                  rate >= 70 ? "bg-green-400" : rate >= 40 ? "bg-yellow-400" : "bg-red-400"
+                        <div key={label} className="space-y-2">
+                          <div className="flex justify-between text-xs font-bold">
+                            <span className="text-[#8B4513]/60">{label}</span>
+                            <span className="text-[#8B4513]">{count} 人</span>
+                          </div>
+                          <div className="h-3 bg-[#F0F0F0] rounded-full overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all duration-1000 ${i === 4 ? "bg-green-500" : i >= 2 ? "bg-yellow-400" : "bg-[#E60012]/60"
                                 }`}
-                                style={{ width: `${rate}%` }}
-                              />
-                            </div>
-                            <span className="text-xs text-[#8B4513]/60 w-10 text-right">{rate}%</span>
+                              style={{ width: `${percentage}%` }}
+                            />
                           </div>
                         </div>
                       );
                     })}
                   </div>
-                ) : (
-                  <p className="text-[#8B4513]/50 text-center py-4">載入中...</p>
-                )}
-              </div>
-            </Card>
+                </Card>
 
-            <Card className="rounded-2xl border-[#E8D5B7] bg-white/80 overflow-hidden">
-              <div className="bg-[#E60012]/10 p-3 border-b border-[#E8D5B7]">
-                <h3 className="font-bold text-[#E60012]">個人排行 (前 20 名)</h3>
-              </div>
-              <div className="p-4">
-                {leaderboard.length === 0 ? (
-                  <p className="text-[#8B4513]/50 text-center py-4">尚無成績資料</p>
-                ) : (
-                  <div className="space-y-1">
-                    {leaderboard.slice(0, 20).map((entry, i) => (
-                      <div key={entry.uid} className="flex items-center gap-2 p-2 bg-[#FFF8E7] rounded-lg text-sm">
-                        <span className="w-6 text-center font-bold text-[#8B4513]/50">{i + 1}</span>
-                        <span className="flex-1 font-medium text-[#8B4513] truncate">
-                          {entry.nickname}
-                        </span>
-                        <span className="text-xs text-[#8B4513]/50">{entry.className}</span>
-                        <span className="font-bold text-[#E60012] w-14 text-right">{entry.score}分</span>
-                        <span className="text-xs text-[#8B4513]/40 w-10 text-right">{entry.solvedCount}題</span>
-                      </div>
-                    ))}
+                {/* Question Difficulty analysis */}
+                <Card className="rounded-3xl border-none shadow-sm bg-white overflow-hidden">
+                  <div className="p-5 border-b border-[#F0F0F0]">
+                    <h3 className="font-bold text-[#8B4513]">題目難易度排行</h3>
                   </div>
-                )}
+                  <div className="max-h-[400px] overflow-y-auto">
+                    {riddles?.map(r => {
+                      const s = stats.riddleStats[r.id] || { attempts: 0, solved: 0 };
+                      const rate = s.attempts > 0 ? Math.round((s.solved / s.attempts) * 100) : 0;
+                      return (
+                        <div key={r.id} className="p-4 hover:bg-[#FAF9F6] transition-colors group">
+                          <div className="flex items-start gap-3">
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 font-bold text-xs ${rate >= 80 ? "bg-green-100 text-green-600" : rate >= 40 ? "bg-yellow-100 text-yellow-600" : "bg-red-100 text-red-600"
+                              }`}>
+                              #{r.id}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-bold text-[#8B4513] truncate">{r.question}</p>
+                              <div className="flex items-center gap-2 mt-1">
+                                <div className="flex-1 h-1.5 bg-[#F0F0F0] rounded-full overflow-hidden">
+                                  <div
+                                    className={`h-full rounded-full ${rate >= 80 ? "bg-green-500" : rate >= 40 ? "bg-yellow-400" : "bg-red-500"}`}
+                                    style={{ width: `${rate}%` }}
+                                  />
+                                </div>
+                                <span className="text-[10px] font-black text-[#8B4513]/40">{rate}%</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </Card>
               </div>
-            </Card>
-          </>
+            </div>
+          </div>
         ) : null}
 
-        <footer className="py-5 text-center mt-4">
-          <div className="flex items-center justify-center gap-3 mb-2">
-            <span className="text-lg">🏮</span>
-            <span className="text-lg">🐴</span>
-            <span className="text-lg">🎆</span>
+        <footer className="py-12 text-center border-t border-[#F0F0F0]">
+          <div className="flex items-center justify-center gap-4 mb-4">
+            <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm">🏮</div>
+            <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm">🏮</div>
+            <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm">🏮</div>
           </div>
-          <p className="text-sm text-[#8B4513]/60">
-            © 2026 石門國小元宵猜燈謎活動 Made with ❤️ by{" "}
-            <a
-              href="https://www.smes.tyc.edu.tw/modules/tadnews/page.php?ncsn=11&nsn=16#a5"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-bold text-[#E60012] underline hover:text-[#CC0010] transition-colors"
-            >
-              阿凱老師
-            </a>
+          <p className="text-sm font-bold text-[#8B4513]/40">
+            © 2026 石門國小教師管理系統 | Powered by 阿凱老師
           </p>
         </footer>
       </div>

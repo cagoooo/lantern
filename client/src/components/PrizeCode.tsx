@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Gift, Download, PartyPopper } from "lucide-react";
 import { loadLocalProfile } from "@/lib/gameStore";
@@ -105,6 +105,9 @@ export function PrizeCode({ open, onClose, score, solvedCount, total }: PrizeCod
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-sm bg-gradient-to-b from-[#FFF8E7] to-[#FFF0C8] border-2 border-[#FFD700] rounded-2xl p-0 overflow-hidden">
         <DialogTitle className="sr-only">兌獎碼</DialogTitle>
+        <DialogDescription className="sr-only">
+          顯示你的專屬兌獎碼與相關成績資訊。
+        </DialogDescription>
 
         <div className="bg-gradient-to-r from-[#E60012] to-[#CC0010] p-5 text-center">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-white/20 mb-2">

@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { RiddleCard } from "@/components/RiddleCard";
 import { ScoreBoard } from "@/components/ScoreBoard";
@@ -30,6 +31,8 @@ import {
   loadLocalProfile,
   loadStudentProfile,
   submitScore,
+  getRiddles,
+  checkRiddleAnswer,
   type StudentProfile,
 } from "@/lib/gameStore";
 import type { GameState } from "@shared/schema";
@@ -65,7 +68,7 @@ function loadLocalState(): GameState {
   try {
     const saved = localStorage.getItem(LOCAL_KEY);
     if (saved) return JSON.parse(saved);
-  } catch {}
+  } catch { }
   return { currentRiddleIndex: 0, solvedRiddles: [], attempts: {}, score: 0 };
 }
 
@@ -94,11 +97,28 @@ export default function Home() {
   const [firebaseLoaded, setFirebaseLoaded] = useState(false);
   const [stageTransition, setStageTransition] = useState(false);
   const [showFireworks, setShowFireworks] = useState(false);
+  const [, setLocation] = useLocation();
+  const [secretClickCount, setSecretClickCount] = useState(0);
   const riddleListRef = useRef<HTMLDivElement>(null);
 
-  const { data: riddles, isLoading } = useQuery<PublicRiddle[]>({
-    queryKey: ["/api/riddles"],
-  });
+  const handleSecretClick = () => {
+    const newCount = secretClickCount + 1;
+    if (newCount >= 5) {
+      setLocation("/teacher");
+    } else {
+      setSecretClickCount(newCount);
+    }
+  };
+
+  const [riddles, setRiddles] = useState<PublicRiddle[] | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    getRiddles().then(data => {
+      setRiddles(data);
+      setIsLoading(false);
+    });
+  }, []);
 
   useEffect(() => {
     Promise.all([
@@ -164,8 +184,7 @@ export default function Home() {
       if (gameState.solvedRiddles.includes(riddleId)) return false;
 
       try {
-        const res = await apiRequest("POST", `/api/riddles/${riddleId}/check`, { answer });
-        const data = await res.json();
+        const data = await checkRiddleAnswer(riddleId, answer);
 
         if (data.correct && soundEnabled) playCorrectSound();
         if (!data.correct && soundEnabled) playWrongSound();
@@ -190,7 +209,7 @@ export default function Home() {
                 setShowFireworks(true);
                 setShowCompletion(true);
                 setTimeout(() => setShowFireworks(false), 8000);
-                submitScore(finalScore, newSolved.length, timerActive ? timerElapsed : undefined).catch(() => {});
+                submitScore(finalScore, newSolved.length, timerActive ? timerElapsed : undefined).catch(() => { });
               }, 1500);
             }
 
@@ -206,9 +225,10 @@ export default function Home() {
         });
 
         if (data.correct) {
-          setSolvedAnswers((prev) => ({ ...prev, [riddleId]: data.answer }));
-          if (data.explanation) {
-            setSolvedExplanations((prev) => ({ ...prev, [riddleId]: data.explanation }));
+          const result = data as { answer: string; explanation?: string };
+          setSolvedAnswers((prev) => ({ ...prev, [riddleId]: result.answer } as Record<number, string>));
+          if (result.explanation) {
+            setSolvedExplanations((prev) => ({ ...prev, [riddleId]: result.explanation } as Record<number, string>));
           }
           setShowConfetti(true);
           setConfettiKey((k) => k + 1);
@@ -258,7 +278,7 @@ export default function Home() {
   }, []);
 
   const handleLogout = useCallback(() => {
-    try { localStorage.removeItem("shimen-student-profile"); } catch {}
+    try { localStorage.removeItem("shimen-student-profile"); } catch { }
     setStudentProfile(null);
   }, []);
 
@@ -297,10 +317,16 @@ export default function Home() {
         <header className="relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-b from-[#E60012] via-[#CC0010] to-[#A80010]" />
           <div className="absolute inset-0 opacity-10">
-            <div className="absolute top-2 left-4 text-6xl sm:text-8xl text-white/20 font-bold select-none">
+            <div
+              className="absolute top-2 left-4 text-6xl sm:text-8xl text-white/20 font-bold select-none cursor-default"
+              onClick={handleSecretClick}
+            >
               福
             </div>
-            <div className="absolute top-4 right-6 text-5xl sm:text-7xl text-white/15 font-bold select-none">
+            <div
+              className="absolute top-4 right-6 text-5xl sm:text-7xl text-white/15 font-bold select-none cursor-default"
+              onClick={handleSecretClick}
+            >
               馬
             </div>
             <div className="absolute bottom-2 left-1/4 text-4xl sm:text-6xl text-white/10 font-bold select-none">
@@ -363,7 +389,7 @@ export default function Home() {
             <div className="flex items-center justify-center gap-1 mt-2">
               <Sparkles className="w-3.5 h-3.5 text-[#FFD700] animate-glow" />
               <p className="text-xs sm:text-sm text-[#FFD700] font-medium">
-                學務處將於 3/3（二）進行猜燈謎活動！
+                石門國小阿凱老師製作 ✨ 3/3（二）點亮元宵！🏮
               </p>
               <Sparkles className="w-3.5 h-3.5 text-[#FFD700] animate-glow" />
             </div>
@@ -461,7 +487,7 @@ export default function Home() {
                 attempts={gameState.attempts[currentRiddle.id] || 0}
                 onSubmit={(answer) => handleSubmit(currentRiddle.id, answer)}
                 isActive={true}
-                onSelect={() => {}}
+                onSelect={() => { }}
               />
             )}
           </div>
@@ -543,16 +569,16 @@ export default function Home() {
             <span className="text-xl">🎆</span>
           </div>
           <p className="text-sm text-[#8B4513]/60">
-            © 2026 石門國小元宵猜燈謎活動 Made with ❤️ by{" "}
+            © 2026 石門國小元宵猜燈謎活動 🏮{" "}
             <a
               href="https://www.smes.tyc.edu.tw/modules/tadnews/page.php?ncsn=11&nsn=16#a5"
               target="_blank"
               rel="noopener noreferrer"
               className="font-bold text-[#E60012] underline hover:text-[#CC0010] transition-colors"
-              data-testid="link-school-website"
             >
               阿凱老師
-            </a>
+            </a>{" "}
+            製作 ✨
           </p>
         </footer>
       </div>

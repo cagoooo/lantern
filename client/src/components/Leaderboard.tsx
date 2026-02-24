@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { getLeaderboard, getClassLeaderboard, type ScoreEntry } from "@/lib/gameStore";
 import { Trophy, Medal, Crown, Users, Loader2 } from "lucide-react";
 
@@ -32,6 +32,9 @@ export function Leaderboard({ open, onClose }: LeaderboardProps) {
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-lg bg-gradient-to-b from-[#FFF8E7] to-[#FFF0C8] border-2 border-[#FFD700] rounded-2xl p-0 overflow-hidden max-h-[80vh]">
         <DialogTitle className="sr-only">排行榜</DialogTitle>
+        <DialogDescription className="sr-only">
+          顯示目前的個人排名與班級排名資訊。
+        </DialogDescription>
 
         <div className="bg-gradient-to-r from-[#E60012] to-[#CC0010] p-4 text-center">
           <div className="flex items-center justify-center gap-2 mb-1">
@@ -41,22 +44,20 @@ export function Leaderboard({ open, onClose }: LeaderboardProps) {
           <div className="flex justify-center gap-2 mt-3">
             <button
               onClick={() => setTab("individual")}
-              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                tab === "individual"
-                  ? "bg-white text-[#E60012]"
-                  : "bg-white/20 text-white/80 hover:bg-white/30"
-              }`}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${tab === "individual"
+                ? "bg-white text-[#E60012]"
+                : "bg-white/20 text-white/80 hover:bg-white/30"
+                }`}
               data-testid="tab-individual"
             >
               個人排名
             </button>
             <button
               onClick={() => setTab("class")}
-              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                tab === "class"
-                  ? "bg-white text-[#E60012]"
-                  : "bg-white/20 text-white/80 hover:bg-white/30"
-              }`}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${tab === "class"
+                ? "bg-white text-[#E60012]"
+                : "bg-white/20 text-white/80 hover:bg-white/30"
+                }`}
               data-testid="tab-class"
             >
               班級排名
@@ -77,9 +78,8 @@ export function Leaderboard({ open, onClose }: LeaderboardProps) {
                 entries.map((entry, i) => (
                   <div
                     key={entry.uid}
-                    className={`flex items-center gap-3 p-3 rounded-xl ${
-                      i < 3 ? "bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/10" : "bg-white/60"
-                    }`}
+                    className={`flex items-center gap-3 p-3 rounded-xl ${i < 3 ? "bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/10" : "bg-white/60"
+                      }`}
                     data-testid={`leaderboard-entry-${i}`}
                   >
                     <div className="w-8 text-center flex-shrink-0">
@@ -99,7 +99,7 @@ export function Leaderboard({ open, onClose }: LeaderboardProps) {
                       </p>
                       {entry.className && (
                         <p className="text-xs text-[#8B4513]/50">
-                          {entry.className} {entry.seatNumber ? `${entry.seatNumber}號` : ""}
+                          {entry.className} {entry.seatNumber ? `${entry.seatNumber} 號` : ""}
                         </p>
                       )}
                     </div>
@@ -121,9 +121,8 @@ export function Leaderboard({ open, onClose }: LeaderboardProps) {
                 sortedClasses.map(([name, data], i) => (
                   <div
                     key={name}
-                    className={`flex items-center gap-3 p-3 rounded-xl ${
-                      i < 3 ? "bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/10" : "bg-white/60"
-                    }`}
+                    className={`flex items-center gap-3 p-3 rounded-xl ${i < 3 ? "bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/10" : "bg-white/60"
+                      }`}
                     data-testid={`class-entry-${i}`}
                   >
                     <div className="w-8 text-center flex-shrink-0">

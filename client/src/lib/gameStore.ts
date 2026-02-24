@@ -9,8 +9,10 @@ import {
   getDocs,
   serverTimestamp,
 } from "firebase/firestore";
-import { db, ensureAuth, getCurrentUid } from "./firebase";
+import { db, ensureAuth, getCurrentUid, auth } from "./firebase";
+import { signInWithEmailAndPassword, signOut } from "firebase/auth";
 import type { GameState } from "@shared/schema";
+import { getRiddles as getLocalRiddles, checkRiddleAnswer as checkLocalRiddleAnswer } from "./riddles";
 
 const STORAGE_KEY = "shimen-riddle-game";
 const PROFILE_KEY = "shimen-student-profile";
@@ -34,28 +36,28 @@ function loadLocalState(): GameState {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) return JSON.parse(saved);
-  } catch {}
+  } catch { }
   return getDefaultState();
 }
 
 function saveLocalState(state: GameState) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  } catch {}
+  } catch { }
 }
 
 export function loadLocalProfile(): StudentProfile | null {
   try {
     const saved = localStorage.getItem(PROFILE_KEY);
     if (saved) return JSON.parse(saved);
-  } catch {}
+  } catch { }
   return null;
 }
 
 function saveLocalProfile(profile: StudentProfile) {
   try {
     localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
-  } catch {}
+  } catch { }
 }
 
 export async function saveStudentProfile(
@@ -90,7 +92,7 @@ export async function loadStudentProfile(): Promise<StudentProfile | null> {
       saveLocalProfile(profile);
       return profile;
     }
-  } catch {}
+  } catch { }
 
   return local;
 }
@@ -117,7 +119,7 @@ export async function loadGameState(): Promise<GameState> {
         updatedAt: serverTimestamp(),
       });
     }
-  } catch {}
+  } catch { }
 
   return localState;
 }
@@ -134,7 +136,7 @@ export async function saveGameState(state: GameState): Promise<void> {
       ...state,
       updatedAt: serverTimestamp(),
     });
-  } catch {}
+  } catch { }
 }
 
 export interface ScoreEntry {
@@ -168,10 +170,10 @@ export async function submitScore(
       totalTime: totalTime ?? null,
       createdAt: serverTimestamp(),
     });
-  } catch {}
+  } catch { }
 }
 
-export async function getLeaderboard(max = 50): Promise<ScoreEntry[]> {
+export async function getLeaderboard(max = 1000): Promise<ScoreEntry[]> {
   try {
     await ensureAuth();
     const q = query(
@@ -218,11 +220,16 @@ export async function getStatsForTeacher(): Promise<{
   totalPlayers: number;
   classStats: Record<string, number>;
   riddleStats: Record<number, { attempts: number; solved: number }>;
+  allScores: ScoreEntry[];
 }> {
   try {
-    await ensureAuth();
+    const user = auth.currentUser;
+    if (!user || user.isAnonymous) {
+      throw new Error("Unauthorized");
+    }
+
     const statesQuery = query(collection(db, COLLECTION_GAME_STATE));
-    const scoresQuery = query(collection(db, COLLECTION_SCORES));
+    const scoresQuery = query(collection(db, COLLECTION_SCORES), orderBy("score", "desc"));
     const profilesQuery = query(collection(db, COLLECTION_PROFILES));
 
     const [statesSnap, scoresSnap, profilesSnap] = await Promise.all([
@@ -230,6 +237,8 @@ export async function getStatsForTeacher(): Promise<{
       getDocs(scoresQuery),
       getDocs(profilesQuery),
     ]);
+
+    const allScores = scoresSnap.docs.map(d => d.data() as ScoreEntry);
 
     const classStats: Record<string, number> = {};
     profilesSnap.docs.forEach((d) => {
@@ -262,12 +271,13 @@ export async function getStatsForTeacher(): Promise<{
     });
 
     return {
-      totalPlayers: scoresSnap.size,
+      totalPlayers: allScores.length,
       classStats,
       riddleStats,
+      allScores
     };
   } catch {
-    return { totalPlayers: 0, classStats: {}, riddleStats: {} };
+    return { totalPlayers: 0, classStats: {}, riddleStats: {}, allScores: [] };
   }
 }
 
@@ -284,11 +294,31 @@ export async function resetGameState(): Promise<void> {
       ...defaultState,
       updatedAt: serverTimestamp(),
     });
-  } catch {}
+  } catch { }
 }
 
 export function clearLocalProfile(): void {
   try {
     localStorage.removeItem(PROFILE_KEY);
-  } catch {}
+  } catch { }
+}
+
+export async function getRiddles() {
+  return await getLocalRiddles();
+}
+
+export async function checkRiddleAnswer(riddleId: number, answer: string) {
+  return await checkLocalRiddleAnswer(riddleId, answer);
+}
+
+export async function loginTeacher(email: string, pass: string): Promise<void> {
+  await signInWithEmailAndPassword(auth, email, pass);
+}
+
+export async function logoutTeacher(): Promise<void> {
+  await signOut(auth);
+}
+
+export function isTeacherAuthenticated(): boolean {
+  return !!auth.currentUser && !auth.currentUser.isAnonymous;
 }

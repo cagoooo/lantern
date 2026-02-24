@@ -14,7 +14,7 @@ export default function ClassBattle() {
     try {
       const data = await getClassLeaderboard();
       setClassData(data);
-    } catch {}
+    } catch { }
     setLoading(false);
   };
 
@@ -75,15 +75,14 @@ export default function ClassBattle() {
             {sorted.map(([name, data], i) => (
               <Card
                 key={name}
-                className={`rounded-xl border-2 overflow-hidden transition-all ${
-                  i === 0
-                    ? "border-[#FFD700] bg-gradient-to-r from-[#FFD700]/10 to-[#FFA500]/5 shadow-lg"
-                    : i === 1
-                      ? "border-[#C0C0C0] bg-white/80"
-                      : i === 2
-                        ? "border-[#CD7F32] bg-white/80"
-                        : "border-[#E8D5B7] bg-white/80"
-                }`}
+                className={`rounded-xl border-2 overflow-hidden transition-all ${i === 0
+                  ? "border-[#FFD700] bg-gradient-to-r from-[#FFD700]/10 to-[#FFA500]/5 shadow-lg"
+                  : i === 1
+                    ? "border-[#C0C0C0] bg-white/80"
+                    : i === 2
+                      ? "border-[#CD7F32] bg-white/80"
+                      : "border-[#E8D5B7] bg-white/80"
+                  }`}
                 data-testid={`battle-class-${i}`}
               >
                 <div className="p-4">
@@ -95,11 +94,10 @@ export default function ClassBattle() {
                           <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[10px] font-bold text-[#FFD700]">1</span>
                         </div>
                       ) : (
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg ${
-                          i === 1 ? "bg-[#C0C0C0]/20 text-[#777]" :
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg ${i === 1 ? "bg-[#C0C0C0]/20 text-[#777]" :
                           i === 2 ? "bg-[#CD7F32]/20 text-[#CD7F32]" :
-                          "bg-[#E8D5B7]/30 text-[#8B4513]/50"
-                        }`}>
+                            "bg-[#E8D5B7]/30 text-[#8B4513]/50"
+                          }`}>
                           {i + 1}
                         </div>
                       )}
@@ -128,12 +126,11 @@ export default function ClassBattle() {
 
                   <div className="mt-3 bg-[#E8D5B7]/20 rounded-full h-3 overflow-hidden">
                     <div
-                      className={`h-full rounded-full transition-all duration-1000 ${
-                        i === 0 ? "bg-gradient-to-r from-[#FFD700] to-[#FFA500]" :
+                      className={`h-full rounded-full transition-all duration-1000 ${i === 0 ? "bg-gradient-to-r from-[#FFD700] to-[#FFA500]" :
                         i === 1 ? "bg-gradient-to-r from-[#C0C0C0] to-[#999]" :
-                        i === 2 ? "bg-gradient-to-r from-[#CD7F32] to-[#AA6622]" :
-                        "bg-gradient-to-r from-[#E60012]/60 to-[#FF6B6B]/60"
-                      }`}
+                          i === 2 ? "bg-gradient-to-r from-[#CD7F32] to-[#AA6622]" :
+                            "bg-gradient-to-r from-[#E60012]/60 to-[#FF6B6B]/60"
+                        }`}
                       style={{ width: `${(data.totalScore / maxScore) * 100}%` }}
                     />
                   </div>
@@ -158,7 +155,7 @@ export default function ClassBattle() {
             <span className="text-lg">🎆</span>
           </div>
           <p className="text-sm text-[#8B4513]/60">
-            © 2026 石門國小元宵猜燈謎活動 Made with ❤️ by{" "}
+            © 2026 石門國小元宵猜燈謎活動 🏮{" "}
             <a
               href="https://www.smes.tyc.edu.tw/modules/tadnews/page.php?ncsn=11&nsn=16#a5"
               target="_blank"
@@ -166,7 +163,8 @@ export default function ClassBattle() {
               className="font-bold text-[#E60012] underline hover:text-[#CC0010] transition-colors"
             >
               阿凱老師
-            </a>
+            </a>{" "}
+            製作 ✨
           </p>
         </footer>
       </div>

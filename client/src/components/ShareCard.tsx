@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Share2, Download, X } from "lucide-react";
 
@@ -138,7 +138,7 @@ export function ShareCard({
     ctx.fillStyle = "rgba(139, 69, 19, 0.4)";
     ctx.font = "400 14px 'Noto Sans TC', sans-serif";
     ctx.fillText("\u77F3\u9580\u570B\u5C0F 2026 \u5143\u5BB5\u7BC0\u731C\u71C8\u8B0E\u6D3B\u52D5", w / 2, h - 40);
-    ctx.fillText("\u5B78\u52D9\u8655 3/3\uFF08\u4E8C\uFF09", w / 2, h - 18);
+    ctx.fillText("學務處即將進行猜謎活動 3/3（二）", w / 2, h - 18);
 
     const dataUrl = canvas.toDataURL("image/png");
     setImageUrl(dataUrl);
@@ -161,8 +161,8 @@ export function ShareCard({
 
       if (navigator.share && navigator.canShare({ files: [file] })) {
         await navigator.share({
-          title: "2026 \u77F3\u9580\u570B\u5C0F\u5143\u5BB5\u731C\u71C8\u8B0E\u6210\u7E3E",
-          text: `\u6211\u5728\u77F3\u9580\u570B\u5C0F\u5143\u5BB5\u731C\u71C8\u8B0E\u5F97\u4E86 ${score} \u5206\uFF01`,
+          title: "2026 石門國小元宵猜燈謎成績",
+          text: `我在石門國小元宵猜燈謎得了 ${score} 分！`,
           files: [file],
         });
       } else {
@@ -184,18 +184,12 @@ export function ShareCard({
       <DialogContent className="sm:max-w-md bg-[#FFF8E7] border-2 border-[#FFD700] rounded-2xl p-5">
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-bold text-[#8B4513]">
-              {imageUrl ? "\u4F60\u7684\u6210\u7E3E\u5361" : "\u751F\u6210\u6210\u7E3E\u5361"}
-            </h3>
-            <button
-              onClick={() => {
-                setImageUrl(null);
-                onClose();
-              }}
-              className="text-[#8B4513]/40"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <DialogTitle className="text-lg font-bold text-[#8B4513]">
+              {imageUrl ? "你的成績卡" : "生成成績卡"}
+            </DialogTitle>
+            <DialogDescription className="sr-only">
+              製作並分享你的元宵猜燈謎成績。
+            </DialogDescription>
           </div>
 
           <canvas ref={canvasRef} className="hidden" />
@@ -205,7 +199,7 @@ export function ShareCard({
               <div className="rounded-xl overflow-hidden border border-[#E8D5B7] shadow-md">
                 <img
                   src={imageUrl}
-                  alt="\u6210\u7E3E\u5361"
+                  alt="成績卡"
                   className="w-full"
                   data-testid="img-share-card"
                 />
@@ -217,7 +211,7 @@ export function ShareCard({
                   data-testid="button-share"
                 >
                   <Share2 className="w-4 h-4 mr-2" />
-                  \u5206\u4EAB
+                  分享
                 </Button>
                 <Button
                   onClick={handleDownload}
@@ -226,21 +220,21 @@ export function ShareCard({
                   data-testid="button-download"
                 >
                   <Download className="w-4 h-4 mr-2" />
-                  \u4E0B\u8F09
+                  下載
                 </Button>
               </div>
             </div>
           ) : (
             <div className="text-center space-y-4 py-4">
               <p className="text-[#8B4513]/70 text-sm">
-                \u5C07\u4F60\u7684\u6210\u7E3E\u88FD\u4F5C\u6210\u7CBE\u7F8E\u7684\u5716\u7247\uFF0C\u53EF\u4EE5\u5206\u4EAB\u7D66\u5BB6\u4EBA\u548C\u670B\u53CB\u770B\uFF01
+                將你的成績製作成精美的圖片，可以分享給家人和朋友看！
               </p>
               <Button
                 onClick={generateImage}
                 className="h-12 px-8 rounded-xl bg-[#E60012] text-white font-bold text-base"
                 data-testid="button-generate-card"
               >
-                \u751F\u6210\u6210\u7E3E\u5361
+                生成成績卡
               </Button>
             </div>
           )}
