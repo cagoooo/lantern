@@ -11,7 +11,7 @@ const viteLogger = createLogger();
 export async function setupVite(server: Server, app: Express) {
   const serverOptions = {
     middlewareMode: true,
-    hmr: { server, path: "/vite-hmr" },
+    hmr: { server, path: "/lantern/vite-hmr" },
     allowedHosts: true as const,
   };
 
@@ -29,10 +29,39 @@ export async function setupVite(server: Server, app: Express) {
     appType: "custom",
   });
 
+  // Mount vite.middlewares on root
   app.use(vite.middlewares);
 
-  app.use("/{*path}", async (req, res, next) => {
-    const url = req.originalUrl;
+  app.use(async (req, res, next) => {
+    const url = req.originalUrl || req.url;
+    const pathName = req.path;
+
+    // Check if it's an API request
+    if (url.startsWith("/api")) {
+      return next();
+    }
+
+    // Strict asset check: If it has an extension or is a Vite internal path, 
+    // it MUST be handled by Vite or fall through to static serving.
+    const hasExtension = path.extname(pathName) !== "";
+    const isViteInternal =
+      pathName.includes("@vite") ||
+      pathName.includes("@fs") ||
+      pathName.includes("/src/") ||
+      pathName.includes("/node_modules/") ||
+      pathName.includes("vite-hmr") ||
+      pathName.startsWith("/lantern/src/") ||
+      pathName.startsWith("/lantern/node_modules/");
+
+    if (hasExtension || isViteInternal) {
+      // Ensure we don't accidentally serve HTML for these
+      return next();
+    }
+
+    // Only handle HTML requests for navigation starting with /lantern
+    if (!url.startsWith("/lantern")) {
+      return next();
+    }
 
     try {
       const clientTemplate = path.resolve(
@@ -42,13 +71,11 @@ export async function setupVite(server: Server, app: Express) {
         "index.html",
       );
 
-      // always reload the index.html file from disk incase it changes
       let template = await fs.promises.readFile(clientTemplate, "utf-8");
-      template = template.replace(
-        `src="/src/main.tsx"`,
-        `src="/src/main.tsx?v=${nanoid()}"`,
-      );
-      const page = await vite.transformIndexHtml(url, template);
+
+      // Transform HTML using Vite (handles base path and module script transformation)
+      // Always use the base /lantern/ for transformation to ensure consistent asset resolution on subroutes
+      const page = await vite.transformIndexHtml("/lantern/", template);
       res.status(200).set({ "Content-Type": "text/html" }).end(page);
     } catch (e) {
       vite.ssrFixStacktrace(e as Error);

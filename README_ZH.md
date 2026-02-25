@@ -6,11 +6,14 @@
 ## 🚀 核心功能
 ### 學生端 (闖關體驗)
 - **循序漸進闖關**：共有 10 道精心設計的燈謎，包含動物、地名、校內師長名及成語。
-- **成就與榮譽系統**：(v3.2.0 新增)
+- **成就與榮譽系統**：(v3.2.0+)
     - **專屬稱號**：如「石門解謎王」、「直覺大師」、「解謎快手」等。
     - **勳章收集**：根據解題表現獲得不同類別的榮譽勳章。
     - **數位獎狀**：通關後可生成個人化的電子獎狀，支持下載分享。
-- **沉浸式節慶特效**：(v3.2.0 新增)
+- **3D 互動燈謎廊**：(v3.3.0 新增)
+    - **沉浸式體驗**：全新 3D 渲染技術，讓學生在虛擬空間中旋轉燈籠，增加視覺互動感。
+    - **效能優化**：採用延遲加載與預編譯技術，確保 3D 場景穩定且流暢。
+- **沉浸式節慶特效**：
     - **視聽盛宴**：答對時觸發煙火與天燈特效，搭配編程五聲音階背景音樂。
     - **手機端優化**：支援手機與平板「搖一搖」隨機抽題，並提供震動回饋。
 - **動態提示系統**：若嘗試失敗，系統將引導學生思考。
@@ -25,10 +28,11 @@
 - **校內專屬存取**：透過 Firebase 認證保護管理權限。
 
 ## 🛠 技術架構
-- **前端 (Frontend)**: React 18, Vite, Tailwind CSS, Framer Motion (動畫).
-- **後端 (Backend)**: Express.js (Node.js).
+- **前端 (Frontend)**: React 18, Vite, Three.js (3D 渲染), R3F (@react-three/fiber), Tailwind CSS, Framer Motion (動畫).
+- **後端管理 (Logic)**: Express.js (Node.js) / Serverless Client-side Logic.
 - **資料庫 (Database)**: Firebase Firestore (雲端同步) + LocalStorage (本地備份).
-- **認證 (Auth)**: Firebase Anonymous Auth (匿名認證).
+- **身份驗證 (Auth)**: Firebase Email/Pass (教師) + Firebase Anonymous (學生).
+- **PWA (App)**: 離線 Service Worker 與資產預快取策略。
 
 ## 💻 本地開發指南
 ### 1. 安裝環境

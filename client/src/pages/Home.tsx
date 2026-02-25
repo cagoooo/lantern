@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, Suspense, lazy } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
@@ -18,6 +18,7 @@ import { PrizeCode } from "@/components/PrizeCode";
 import { FestiveDecorations } from "@/components/FestiveUI";
 import { CertificateGenerator } from "@/components/CertificateGenerator";
 import { useShake } from "@/hooks/use-shake";
+const LanternGallery3D = lazy(() => import("@/components/LanternGallery3D").then(m => ({ default: m.LanternGallery3D })));
 import {
   playCorrectSound,
   playWrongSound,
@@ -54,6 +55,7 @@ import {
   Swords,
   BarChart3,
   LogOut,
+  Box,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
@@ -100,6 +102,7 @@ export default function Home() {
   const [firebaseLoaded, setFirebaseLoaded] = useState(false);
   const [stageTransition, setStageTransition] = useState(false);
   const [showFireworks, setShowFireworks] = useState(false);
+  const [show3DGallery, setShow3DGallery] = useState(false);
   const [, setLocation] = useLocation();
   const [secretClickCount, setSecretClickCount] = useState(0);
   const riddleListRef = useRef<HTMLDivElement>(null);
@@ -518,12 +521,51 @@ export default function Home() {
             </div>
           </div>
 
-          <ProgressMap
-            total={riddles.length}
-            solvedRiddles={gameState.solvedRiddles}
-            currentIndex={currentIndex}
-            onSelectStage={goToStage}
-          />
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <div className="w-1.5 h-4 bg-[#E60012] rounded-full" />
+              <h2 className="text-sm font-bold text-[#8B4513]">關卡導覽</h2>
+            </div>
+            <button
+              onClick={() => setShow3DGallery(!show3DGallery)}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-medium transition-all border ${show3DGallery
+                ? "bg-[#E60012] text-white border-[#E60012] shadow-sm scale-105"
+                : "bg-white/50 text-[#8B4513] border-[#E8D5B7] hover:bg-white"
+                }`}
+            >
+              <Box className="w-3 h-3" />
+              {show3DGallery ? "切換至平面模式" : "體驗 3D 導覽廊"}
+            </button>
+          </div>
+
+          {show3DGallery ? (
+            <div className="mb-6 animate-in fade-in zoom-in duration-500 min-h-[400px]">
+              <Suspense fallback={
+                <div className="w-full h-[400px] md:h-[600px] bg-black/5 rounded-3xl flex flex-col items-center justify-center border border-dashed border-[#E8D5B7]">
+                  <Loader2 className="w-8 h-8 animate-spin text-[#E60012] mb-2" />
+                  <p className="text-[#8B4513]/60 text-sm">正在初始化 3D 場景...</p>
+                </div>
+              }>
+                <LanternGallery3D
+                  totalStages={riddles?.length ?? 10}
+                  solvedRiddles={gameState.solvedRiddles}
+                  currentStage={currentIndex}
+                  onSelect={(idx) => {
+                    goToStage(idx);
+                    setShow3DGallery(false);
+                  }}
+                  riddles={riddles || []}
+                />
+              </Suspense>
+            </div>
+          ) : (
+            <ProgressMap
+              total={riddles?.length || 0}
+              solvedRiddles={gameState.solvedRiddles}
+              currentIndex={currentIndex}
+              onSelectStage={goToStage}
+            />
+          )}
 
           <div
             ref={riddleListRef}
