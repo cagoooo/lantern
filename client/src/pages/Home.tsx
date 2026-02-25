@@ -56,6 +56,7 @@ import {
   BarChart3,
   LogOut,
   Box,
+  Map,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
@@ -618,6 +619,35 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {/* 🏮 沉浸模式入口 — 跨越兩欄的醒目卡片 */}
+            <Link href="/immersive" className="col-span-2 sm:col-span-4">
+              <div
+                className="flex items-center justify-between p-3.5 rounded-xl cursor-pointer transition-all active:scale-[0.98] hover:scale-[1.01]"
+                style={{
+                  background: 'linear-gradient(135deg, #8B0000 0%, #CC0010 40%, #E65C00 100%)',
+                  boxShadow: '0 4px 20px rgba(230,0,18,0.35), inset 0 1px 0 rgba(255,200,100,0.2)',
+                  border: '1px solid rgba(255,160,0,0.4)',
+                }}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <span className="text-2xl">🏮</span>
+                    <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-yellow-300"></span>
+                    </span>
+                  </div>
+                  <div>
+                    <p className="text-white font-bold text-sm leading-tight">🌙 沉浸模式 — 虛擬燈會</p>
+                    <p className="text-yellow-200/70 text-[10px] mt-0.5">在石門國小虛擬操場探索隱藏燈籠！</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 bg-white/15 px-3 py-1.5 rounded-lg">
+                  <Map className="w-3.5 h-3.5 text-yellow-300" />
+                  <span className="text-yellow-200 text-xs font-semibold">進入</span>
+                </div>
+              </div>
+            </Link>
             <button
               onClick={() => setShowLeaderboard(true)}
               className="flex items-center justify-center gap-2 p-3 rounded-xl bg-white/60 border border-[#E8D5B7] text-[#8B4513] text-sm font-medium hover:bg-white/80 transition-colors"
