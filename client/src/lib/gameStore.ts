@@ -238,15 +238,51 @@ export async function getStatsForTeacher(): Promise<{
       getDocs(profilesQuery),
     ]);
 
-    const allScores = scoresSnap.docs.map(d => d.data() as ScoreEntry);
+    // Create maps for efficient lookup
+    const scoreMap = new Map<string, ScoreEntry>();
+    scoresSnap.docs.forEach(d => {
+      const s = d.data() as ScoreEntry;
+      scoreMap.set(s.uid, s);
+    });
 
+    const stateMap = new Map<string, GameState>();
+    statesSnap.docs.forEach(d => {
+      const s = d.data() as GameState;
+      const uid = d.id; // uid is the doc ID in COLLECTION_GAME_STATE
+      stateMap.set(uid, s);
+    });
+
+    const allScores: ScoreEntry[] = [];
     const classStats: Record<string, number> = {};
+
     profilesSnap.docs.forEach((d) => {
       const p = d.data() as StudentProfile;
+      const uid = p.uid;
+
+      const scoreEntry = scoreMap.get(uid);
+      const gameState = stateMap.get(uid);
+
       if (p.className) {
         classStats[p.className] = (classStats[p.className] || 0) + 1;
       }
+
+      // Merge data: ScoreEntry > GameState > Profile
+      const mergedEntry: ScoreEntry = {
+        uid: uid,
+        nickname: p.nickname || scoreEntry?.nickname || "未填姓名",
+        className: p.className || scoreEntry?.className || "",
+        seatNumber: p.seatNumber || scoreEntry?.seatNumber || "",
+        score: scoreEntry?.score ?? gameState?.score ?? 0,
+        solvedCount: scoreEntry?.solvedCount ?? gameState?.solvedRiddles?.length ?? 0,
+        totalTime: scoreEntry?.totalTime ?? undefined,
+        createdAt: scoreEntry?.createdAt ?? p.createdAt ?? null
+      };
+
+      allScores.push(mergedEntry);
     });
+
+    // Sort combined list by score desc
+    allScores.sort((a, b) => b.score - a.score);
 
     const riddleStats: Record<number, { attempts: number; solved: number }> = {};
     statesSnap.docs.forEach((d) => {
@@ -271,7 +307,7 @@ export async function getStatsForTeacher(): Promise<{
     });
 
     return {
-      totalPlayers: allScores.length,
+      totalPlayers: profilesSnap.size, // Use total profiles as total players
       classStats,
       riddleStats,
       allScores

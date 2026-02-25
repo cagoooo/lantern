@@ -86,9 +86,9 @@ export default function TeacherDashboard() {
   }, [stats?.allScores, searchQuery, classFilter]);
 
   const classes = useMemo(() => {
-    if (!stats?.allScores) return [];
-    return Array.from(new Set(stats.allScores.map(s => s.className).filter(Boolean))).sort();
-  }, [stats?.allScores]);
+    if (!stats?.classStats) return [];
+    return Object.keys(stats.classStats).sort();
+  }, [stats?.classStats]);
 
   const completionDistribution = useMemo(() => {
     if (!stats?.allScores) return { bins: [0, 0, 0, 0, 0], labels: ["0題", "1-3題", "4-6題", "7-9題", "10題"] };
@@ -261,9 +261,9 @@ export default function TeacherDashboard() {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
               {[
                 { label: "總參與人數", value: stats.totalPlayers, icon: Users, color: "text-blue-500", bg: "bg-blue-50" },
-                { label: "平均分數", value: stats.totalPlayers > 0 ? Math.round(stats.allScores.reduce((a, b) => a + b.score, 0) / stats.totalPlayers) : 0, icon: TrendingUp, color: "text-orange-500", bg: "bg-orange-50" },
+                { label: "平均分數", value: stats.allScores.filter(s => s.solvedCount > 0).length > 0 ? Math.round(stats.allScores.reduce((a, b) => a + b.score, 0) / stats.allScores.filter(s => s.solvedCount > 0).length) : 0, icon: TrendingUp, color: "text-orange-500", bg: "bg-orange-50" },
                 { label: "全通關人數", value: stats.allScores.filter(s => s.solvedCount >= 10).length, icon: CheckCircle, color: "text-green-500", bg: "bg-green-50" },
-                { label: "參與班級數", value: Object.keys(stats.classStats).length, icon: GraduationCap, color: "text-purple-500", bg: "bg-purple-50" },
+                { label: "參與班級數", value: classes.length, icon: GraduationCap, color: "text-purple-500", bg: "bg-purple-50" },
               ].map((item, idx) => (
                 <Card key={idx} className="p-6 rounded-3xl border-none shadow-sm hover:shadow-md transition-shadow bg-white overflow-hidden relative group">
                   <div className={`absolute top-0 right-0 w-24 h-24 ${item.bg} rounded-full -mr-8 -mt-8 transition-transform group-hover:scale-110`} />
