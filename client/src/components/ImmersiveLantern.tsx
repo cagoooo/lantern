@@ -9,6 +9,7 @@ interface ImmersiveLanternProps {
     isSolved: boolean;
     playerPosition: THREE.Vector3;
     onInteract: (index: number) => void;
+    onNearby: (index: number | null) => void;  // 通知父層當前靠近的燈籠
     riddleQuestion?: string;
 }
 
@@ -18,11 +19,13 @@ export function ImmersiveLantern({
     isSolved,
     playerPosition,
     onInteract,
+    onNearby,
     riddleQuestion,
 }: ImmersiveLanternProps) {
     const groupRef = useRef<THREE.Group>(null);
     const glowRef = useRef<THREE.PointLight>(null);
     const [hovered, setHovered] = useState(false);
+    const wasNearby = useRef(false);   // 追蹤前一幀的靠近狀態，避免重複 callback
 
     const INTERACT_DISTANCE = 3.0;
 
@@ -47,6 +50,12 @@ export function ImmersiveLantern({
                 : isNearby
                     ? 3.5 + Math.sin(t * 4) * 0.8
                     : 2.0 + Math.sin(t * 1.5) * 0.4;
+        }
+
+        // 回報靠近狀態變化給父層（僅在狀態改變時觸發，避免每幀都 setState）
+        if (isNearby !== wasNearby.current) {
+            wasNearby.current = isNearby;
+            onNearby(isNearby && !isSolved ? riddleIndex : null);
         }
     });
 

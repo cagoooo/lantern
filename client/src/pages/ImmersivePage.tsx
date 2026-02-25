@@ -483,6 +483,7 @@ export default function ImmersivePage() {
                             solvedRiddles={gameState.solvedRiddles}
                             playerPosition={playerPosition}
                             onLanternInteract={handleLanternInteract}
+                            onLanternNearby={setNearbyLanternIndex}
                         />
                         {!showTutorial && (
                             <PlayerController

@@ -16,6 +16,7 @@ interface ImmersiveWorldProps {
     solvedRiddles: number[];
     playerPosition: THREE.Vector3;
     onLanternInteract: (riddleIndex: number) => void;
+    onLanternNearby: (riddleIndex: number | null) => void;
 }
 
 // 操場地板
@@ -177,6 +178,7 @@ export function ImmersiveWorld({
     solvedRiddles,
     playerPosition,
     onLanternInteract,
+    onLanternNearby,
 }: ImmersiveWorldProps) {
     // 計算燈籠位置（依據謎題數量）
     const lanternPositions = useMemo(() => {
@@ -271,6 +273,7 @@ export function ImmersiveWorld({
                     isSolved={solvedRiddles.includes(riddle.id)}
                     playerPosition={playerPosition}
                     onInteract={onLanternInteract}
+                    onNearby={onLanternNearby}
                     riddleQuestion={riddle.question}
                 />
             ))}
