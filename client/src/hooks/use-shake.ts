@@ -64,6 +64,9 @@ export function useShake({
         Date.now() - lastShake.current > timeout
       ) {
         lastShake.current = Date.now();
+        if ("vibrate" in navigator) {
+          navigator.vibrate(200);
+        }
         onShake();
       }
     };

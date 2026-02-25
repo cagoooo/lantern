@@ -127,16 +127,22 @@ export default function TeacherDashboard() {
       }
     };
 
-    const rows = stats.allScores.map(s => [
-      s.className || "",
-      s.seatNumber || "",
-      s.nickname,
-      s.score,
-      s.solvedCount,
-      formatDate(s.createdAt)
-    ]);
+    const rows = filteredStudents.map(s => {
+      const titlesStr = s.titles ? s.titles.join(";") : "";
+      const badgesStr = s.badges ? s.badges.join(";") : "";
+      return [
+        s.nickname,
+        s.className || "",
+        s.seatNumber || "",
+        s.score,
+        s.solvedCount,
+        s.totalTime || 0,
+        `"${(s as any).titles ? (s as any).titles.join(";") : ""}"`,
+        `"${(s as any).badges ? (s as any).badges.join(";") : ""}"`
+      ].join(",");
+    }).join("\n");
 
-    const csvContent = BOM + [headers, ...rows].map(row => row.join(",")).join("\n");
+    const csvContent = BOM + headers.join(",") + "\n" + rows;
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -339,13 +345,14 @@ export default function TeacherDashboard() {
                         <th className="px-6 py-4">班級 / 座號</th>
                         <th className="px-6 py-4 text-center">得分</th>
                         <th className="px-6 py-4 text-center">通關數</th>
+                        <th className="px-6 py-4">榮譽 / 勳章</th>
                         <th className="px-6 py-4 text-right">進度條</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[#F0F0F0]">
                       {filteredStudents.length === 0 ? (
                         <tr>
-                          <td colSpan={5} className="px-6 py-12 text-center text-[#8B4513]/40 font-medium">
+                          <td colSpan={6} className="px-6 py-12 text-center text-[#8B4513]/40 font-medium">
                             未找到符合條件的學生資料
                           </td>
                         </tr>
@@ -360,6 +367,20 @@ export default function TeacherDashboard() {
                             </td>
                             <td className="px-6 py-4 text-center font-black text-[#E60012]">{s.score}</td>
                             <td className="px-6 py-4 text-center text-sm font-bold text-[#8B4513]/60">{s.solvedCount} / 10</td>
+                            <td className="px-6 py-4">
+                              <div className="flex flex-wrap gap-1">
+                                {(s as any).titles?.slice(0, 1).map((t: string) => (
+                                  <span key={t} className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-bold">
+                                    {t}
+                                  </span>
+                                ))}
+                                {(s as any).badges && (s as any).badges.length > 0 && (
+                                  <span className="text-[10px] bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded font-bold">
+                                    🏅 x{(s as any).badges.length}
+                                  </span>
+                                )}
+                              </div>
+                            </td>
                             <td className="px-6 py-4">
                               <div className="w-24 ml-auto h-2 bg-[#F0F0F0] rounded-full overflow-hidden">
                                 <div

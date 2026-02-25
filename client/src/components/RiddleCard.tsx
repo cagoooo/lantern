@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Check, X, Lightbulb, Send, Star, Loader2 } from "lucide-react";
+import { FestiveEffects } from "./FestiveEffects";
 
 interface PublicRiddle {
   id: number;
@@ -83,8 +84,8 @@ export function RiddleCard({
     <div className="transition-all duration-300 animate-slide-up">
       <Card
         className={`relative border-2 transition-all duration-300 ${isSolved
-            ? "border-[#FFD700] bg-gradient-to-br from-[#FFF8E7] to-[#FFF0C8]"
-            : "border-[#E60012] bg-white shadow-lg shadow-[#E60012]/10"
+          ? "border-[#FFD700] bg-gradient-to-br from-[#FFF8E7] to-[#FFF0C8]"
+          : "border-[#E60012] bg-white shadow-lg shadow-[#E60012]/10"
           }`}
         data-testid={`riddle-card-${riddle.id}`}
       >
@@ -97,11 +98,12 @@ export function RiddleCard({
         )}
 
         <div className="p-4 sm:p-6">
+          <FestiveEffects type="both" active={showResult === "correct"} />
           <div className="flex items-start gap-3 sm:gap-4">
             <div
               className={`flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-bold text-base sm:text-lg ${isSolved
-                  ? "bg-[#FFD700] text-[#8B4513]"
-                  : "bg-[#E60012] text-white"
+                ? "bg-[#FFD700] text-[#8B4513]"
+                : "bg-[#E60012] text-white"
                 }`}
             >
               {isSolved ? <Check className="w-5 h-5 sm:w-6 sm:h-6" /> : numberLabel}
@@ -111,8 +113,8 @@ export function RiddleCard({
               <div className="flex items-center gap-2 mb-2 flex-wrap">
                 <span
                   className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${isSolved
-                      ? "bg-[#FFD700]/30 text-[#8B4513]"
-                      : "bg-[#E60012]/10 text-[#E60012]"
+                    ? "bg-[#FFD700]/30 text-[#8B4513]"
+                    : "bg-[#E60012]/10 text-[#E60012]"
                     }`}
                 >
                   {riddle.hint}
@@ -162,10 +164,10 @@ export function RiddleCard({
                       placeholder="輸入你的答案..."
                       disabled={isSubmitting}
                       className={`flex-1 border-2 text-base h-12 rounded-xl transition-colors ${showResult === "wrong"
-                          ? "border-red-400 animate-shake bg-red-50"
-                          : showResult === "correct"
-                            ? "border-[#FFD700] bg-[#FFF8E7]"
-                            : "border-[#E8D5B7] focus:border-[#E60012]"
+                        ? "border-red-400 animate-shake bg-red-50"
+                        : showResult === "correct"
+                          ? "border-[#FFD700] bg-[#FFF8E7]"
+                          : "border-[#E8D5B7] focus:border-[#E60012]"
                         }`}
                       data-testid={`input-answer-${riddle.id}`}
                     />
@@ -222,15 +224,15 @@ export function RiddleCard({
                         <div
                           key={i}
                           className={`border rounded-lg p-3 ${i === currentHints.length - 1 && hintLevel > 1
-                              ? "bg-[#FFE8B8] border-[#FFD700]/60 animate-bounce-in"
-                              : "bg-[#FFF8E7] border-[#FFD700]/40"
+                            ? "bg-[#FFE8B8] border-[#FFD700]/60 animate-bounce-in"
+                            : "bg-[#FFF8E7] border-[#FFD700]/40"
                             }`}
                         >
                           <div className="flex items-start gap-2">
                             <Lightbulb
                               className={`w-3.5 h-3.5 mt-0.5 flex-shrink-0 ${i === currentHints.length - 1 && hintLevel > 1
-                                  ? "text-[#FF6B6B]"
-                                  : "text-[#FFD700]"
+                                ? "text-[#FF6B6B]"
+                                : "text-[#FFD700]"
                                 }`}
                             />
                             <p className="text-sm text-[#8B4513]">{hint}</p>

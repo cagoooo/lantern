@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Gift, Download, PartyPopper } from "lucide-react";
+import { Gift, Download, PartyPopper, Award } from "lucide-react";
 import { loadLocalProfile } from "@/lib/gameStore";
 
 interface PrizeCodeProps {
@@ -10,6 +10,7 @@ interface PrizeCodeProps {
   score: number;
   solvedCount: number;
   total: number;
+  onShowCertificate?: () => void;
 }
 
 function generatePrizeCode(uid: string): string {
@@ -28,7 +29,7 @@ function generatePrizeCode(uid: string): string {
   return code.slice(0, 4) + "-" + code.slice(4);
 }
 
-export function PrizeCode({ open, onClose, score, solvedCount, total }: PrizeCodeProps) {
+export function PrizeCode({ open, onClose, score, solvedCount, total, onShowCertificate }: PrizeCodeProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [prizeCode, setPrizeCode] = useState("");
   const profile = loadLocalProfile();
@@ -151,6 +152,17 @@ export function PrizeCode({ open, onClose, score, solvedCount, total }: PrizeCod
                 <Download className="w-4 h-4 mr-2" />
                 下載兌獎圖片
               </Button>
+
+              {onShowCertificate && (
+                <Button
+                  onClick={onShowCertificate}
+                  variant="outline"
+                  className="w-full h-10 rounded-xl border-2 border-[#FFD700] text-[#8B4513] font-bold"
+                >
+                  <Award className="w-4 h-4 mr-2 text-[#E60012]" />
+                  查看榮譽獎狀
+                </Button>
+              )}
             </>
           ) : (
             <div className="py-6 space-y-3">

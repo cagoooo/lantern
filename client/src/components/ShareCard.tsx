@@ -10,6 +10,8 @@ interface ShareCardProps {
   total: number;
   solvedCount: number;
   elapsedTime?: number;
+  titles?: string[];
+  badges?: string[];
 }
 
 export function ShareCard({
@@ -19,6 +21,8 @@ export function ShareCard({
   total,
   solvedCount,
   elapsedTime,
+  titles = [],
+  badges = [],
 }: ShareCardProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -132,6 +136,24 @@ export function ShareCard({
     ctx.fillStyle = "#E60012";
     ctx.font = "bold 28px 'Noto Sans TC', sans-serif";
     ctx.fillText(message, w / 2, msgY);
+
+    // 繪製稱號與徽章
+    if (titles.length > 0 || badges.length > 0) {
+      ctx.fillStyle = "#8B4513";
+      ctx.font = "bold 16px 'Noto Sans TC', sans-serif";
+      let achievementY = msgY + 40;
+
+      if (titles.length > 0) {
+        ctx.fillText(`稱號：${titles.join(" | ")}`, w / 2, achievementY);
+        achievementY += 25;
+      }
+
+      if (badges.length > 0) {
+        ctx.fillStyle = "#E60012";
+        ctx.font = "bold 14px 'Noto Sans TC', sans-serif";
+        ctx.fillText(`獲得勳章：${badges.map(b => `【${b}】`).join(" ")}`, w / 2, achievementY);
+      }
+    }
 
     drawStars(ctx, w / 2, msgY + 50, solvedCount, total);
 

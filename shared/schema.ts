@@ -4,6 +4,9 @@ export const riddleSchema = z.object({
   id: z.number(),
   question: z.string(),
   hint: z.string(),
+  category: z.enum(["動物", "文化", "師長", "成語", "字謎", "地名"]),
+  image: z.string().optional(),
+  audio: z.string().optional(),
 });
 
 export const riddleWithAnswersSchema = riddleSchema.extend({
@@ -24,4 +27,7 @@ export interface GameState {
   solvedRiddles: number[];
   attempts: Record<number, number>;
   score: number;
+  titles?: string[];
+  badges?: string[];
+  timerElapsed?: number;
 }

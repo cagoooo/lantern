@@ -147,13 +147,17 @@ export interface ScoreEntry {
   score: number;
   solvedCount: number;
   totalTime?: number;
+  titles?: string[];
+  badges?: string[];
   createdAt: unknown;
 }
 
 export async function submitScore(
   score: number,
   solvedCount: number,
-  totalTime?: number
+  totalTime?: number,
+  titles?: string[],
+  badges?: string[]
 ): Promise<void> {
   try {
     const uid = await ensureAuth();
@@ -168,6 +172,8 @@ export async function submitScore(
       score,
       solvedCount,
       totalTime: totalTime ?? null,
+      titles: titles || [],
+      badges: badges || [],
       createdAt: serverTimestamp(),
     });
   } catch { }

@@ -9,6 +9,8 @@ interface CompletionModalProps {
   onReset: () => void;
   onClose: () => void;
   onShare?: () => void;
+  titles?: string[];
+  badges?: string[];
 }
 
 export function CompletionModal({
@@ -18,6 +20,8 @@ export function CompletionModal({
   onReset,
   onClose,
   onShare,
+  titles = [],
+  badges = [],
 }: CompletionModalProps) {
   const maxScore = total * 10;
   const percentage = Math.round((score / maxScore) * 100);
@@ -64,6 +68,33 @@ export function CompletionModal({
                 <span className="text-2xl font-bold text-[#FFD700]">{percentage}%</span>
               </div>
             </div>
+
+            {/* 榮譽與勳章 */}
+            {(titles.length > 0 || badges.length > 0) && (
+              <div className="mb-6 space-y-3">
+                {titles.length > 0 && (
+                  <div className="flex flex-wrap justify-center gap-2">
+                    {titles.map(title => (
+                      <span key={title} className="px-3 py-1 rounded-full bg-[#E60012] text-white text-[10px] sm:text-xs font-bold shadow-sm animate-bounce-in">
+                        ✨ {title}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {badges.length > 0 && (
+                  <div className="flex flex-wrap justify-center gap-3">
+                    {badges.map(badge => (
+                      <div key={badge} className="flex flex-col items-center gap-1 animate-bounce-in">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#FFD700] to-[#FFA500] flex items-center justify-center shadow-md">
+                          <span className="text-lg">🏅</span>
+                        </div>
+                        <span className="text-[10px] font-bold text-[#8B4513]">{badge}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="mb-6">
               {percentage === 100 ? (

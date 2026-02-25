@@ -47,7 +47,7 @@ export function playCorrectSound() {
       osc.start(now + t);
       osc.stop(now + t + 0.25);
     });
-  } catch {}
+  } catch { }
 }
 
 export function playWrongSound() {
@@ -80,7 +80,7 @@ export function playWrongSound() {
     gain2.connect(ctx.destination);
     osc2.start(now + 0.15);
     osc2.stop(now + 0.55);
-  } catch {}
+  } catch { }
 }
 
 export function playCompletionSound() {
@@ -117,7 +117,7 @@ export function playCompletionSound() {
       osc.start(now + 1.1);
       osc.stop(now + 2.1);
     });
-  } catch {}
+  } catch { }
 }
 
 const PENTATONIC = [261.63, 293.66, 329.63, 392.0, 440.0, 523.25, 587.33, 659.25];
@@ -149,17 +149,23 @@ export function startBgMusic() {
     playBgNote(ctx, bgMusicGain);
     bgMusicInterval = setInterval(() => {
       if (bgMusicGain && isBgMusicPlaying) {
-        playBgNote(ctx, bgMusicGain);
-        if (Math.random() > 0.6) {
+        // Create a more rhythmic pentatonic melody
+        const coin = Math.random();
+        if (coin > 0.3) {
+          playBgNote(ctx, bgMusicGain);
+        }
+
+        // Occasional double notes (harmony)
+        if (coin > 0.7) {
           setTimeout(() => {
             if (bgMusicGain && isBgMusicPlaying) {
               playBgNote(ctx, bgMusicGain);
             }
-          }, 200);
+          }, 150);
         }
       }
-    }, 800 + Math.random() * 400);
-  } catch {}
+    }, 600);
+  } catch { }
 }
 
 export function stopBgMusic() {
@@ -171,7 +177,7 @@ export function stopBgMusic() {
   if (bgMusicGain) {
     try {
       bgMusicGain.gain.linearRampToValueAtTime(0, bgMusicGain.context.currentTime + 0.5);
-    } catch {}
+    } catch { }
     bgMusicGain = null;
   }
 }

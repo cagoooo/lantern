@@ -16,6 +16,7 @@ import { StudentLogin } from "@/components/StudentLogin";
 import { Leaderboard } from "@/components/Leaderboard";
 import { PrizeCode } from "@/components/PrizeCode";
 import { FestiveDecorations } from "@/components/FestiveUI";
+import { CertificateGenerator } from "@/components/CertificateGenerator";
 import { useShake } from "@/hooks/use-shake";
 import {
   playCorrectSound,
@@ -95,6 +96,7 @@ export default function Home() {
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showPrizeCode, setShowPrizeCode] = useState(false);
   const [shakeNotice, setShakeNotice] = useState(false);
+  const [showCertificate, setShowCertificate] = useState(false);
   const [firebaseLoaded, setFirebaseLoaded] = useState(false);
   const [stageTransition, setStageTransition] = useState(false);
   const [showFireworks, setShowFireworks] = useState(false);
@@ -139,6 +141,51 @@ export default function Home() {
     saveToFirestore(gameState);
   }, [gameState, firebaseLoaded]);
 
+  // Handle BGM initialization
+  useEffect(() => {
+    if (soundEnabled) {
+      startBgMusic();
+    } else {
+      stopBgMusic();
+    }
+    return () => stopBgMusic();
+  }, [soundEnabled]);
+
+  // 成就系統邏輯 (Achievement System Logic)
+  const getTitlesAndBadges = useCallback(() => {
+    const titles: string[] = [];
+    const badges: string[] = [];
+
+    if (gameState.solvedRiddles.length >= 1) titles.push("初試啼聲");
+    if (gameState.solvedRiddles.length >= 10) titles.push("石門解謎王");
+
+    // 檢查是否完全無提示
+    const usedHint = Object.values(gameState.attempts).some(a => a >= 3);
+    if (gameState.solvedRiddles.length >= 10 && !usedHint) titles.push("直覺大師");
+
+    // 檢查計時 (5分鐘內 300秒)
+    if (gameState.solvedRiddles.length >= 10 && timerActive && timerElapsed < 300) {
+      titles.push("解謎快手");
+    }
+
+    // 徽章邏輯 (基於題庫分類)
+    if (riddles) {
+      const solvedFullList = riddles.filter(r => gameState.solvedRiddles.includes(r.id)) as any[];
+      const idiomCount = solvedFullList.filter(r => r.category === "成語").length;
+      if (idiomCount >= 1) badges.push("成語小高手");
+
+      const teacherCount = solvedFullList.filter(r => r.category === "師長").length;
+      if (teacherCount >= 2) badges.push("師長達人");
+
+      const culturalCount = solvedFullList.filter(r => r.category === "文化").length;
+      if (culturalCount >= 1) badges.push("文化傳承者");
+    }
+
+    return { titles, badges };
+  }, [gameState.solvedRiddles, gameState.attempts, riddles, timerActive, timerElapsed]);
+
+  const { titles, badges } = getTitlesAndBadges();
+
   const currentIndex = gameState.currentRiddleIndex;
   const currentRiddle = riddles ? riddles[currentIndex] : null;
   const totalRiddles = riddles?.length ?? 10;
@@ -178,6 +225,7 @@ export default function Home() {
   useShake({
     onShake: pickRandomUnsolved,
     enabled: !!riddles && gameState.solvedRiddles.length < (riddles?.length ?? 10),
+    threshold: 12, // Lowered from 15 for better sensitivity
   });
 
   const handleSubmit = useCallback(
@@ -203,14 +251,15 @@ export default function Home() {
             const attemptCount = newAttempts[riddleId];
             const points = attemptCount === 1 ? 10 : attemptCount === 2 ? 7 : 5;
 
-            if (newSolved.length === (riddles?.length || 10)) {
+            if (newSolved.length === totalRiddles) {
               const finalScore = prev.score + points;
+              const { titles: finalTitles, badges: finalBadges } = getTitlesAndBadges(); // Recalculate with newSolved
               setTimeout(() => {
                 if (soundEnabled) playCompletionSound();
                 setShowFireworks(true);
                 setShowCompletion(true);
                 setTimeout(() => setShowFireworks(false), 8000);
-                submitScore(finalScore, newSolved.length, timerActive ? timerElapsed : undefined).catch(() => { });
+                submitScore(finalScore, newSolved.length, timerActive ? timerElapsed : undefined, finalTitles, finalBadges).catch(() => { });
               }, 1500);
             }
 
@@ -438,7 +487,10 @@ export default function Home() {
                 <Shuffle className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">隨機出題</span>
               </button>
-              <div className="sm:hidden flex items-center gap-1 text-[10px] text-[#8B4513]/30">
+              <div
+                onClick={pickRandomUnsolved}
+                className="sm:hidden flex items-center gap-1 text-[10px] text-[#8B4513]/50 bg-white/30 px-2 py-1 rounded-full border border-[#E8D5B7]/50 active:scale-95 transition-transform"
+              >
                 <Smartphone className="w-3 h-3" />
                 搖一搖抽題
               </div>
@@ -590,6 +642,8 @@ export default function Home() {
           setShowCompletion(false);
           setShowShareCard(true);
         }}
+        titles={titles}
+        badges={badges}
       />
 
       <ShareCard
@@ -599,6 +653,8 @@ export default function Home() {
         total={riddles.length}
         solvedCount={gameState.solvedRiddles.length}
         elapsedTime={timerActive ? timerElapsed : undefined}
+        titles={titles}
+        badges={badges}
       />
 
       <EventControl
@@ -617,6 +673,16 @@ export default function Home() {
         score={gameState.score}
         solvedCount={gameState.solvedRiddles.length}
         total={riddles.length}
+        onShowCertificate={() => setShowCertificate(true)}
+      />
+
+      <CertificateGenerator
+        open={showCertificate}
+        onClose={() => setShowCertificate(false)}
+        studentName={studentProfile.nickname || studentProfile.className}
+        className={studentProfile.className}
+        title={titles.length > 0 ? titles[titles.length - 1] : "解謎學者"}
+        score={gameState.score}
       />
     </div>
   );
