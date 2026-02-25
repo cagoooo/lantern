@@ -5,16 +5,11 @@ import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 
 export default defineConfig({
   base: "/lantern/",
+  // 明確指定 .env 路徑為根目錄（因為 root 是 client 子目錄）
+  envDir: path.resolve(import.meta.dirname),
   plugins: [
     react(),
     runtimeErrorOverlay(),
-    // The user's provided snippet implies adding themePlugin() here,
-    // but it's not present in the original file's imports.
-    // Assuming themePlugin() is a placeholder or needs to be imported.
-    // For now, I will only move the base property as per the explicit instruction
-    // and the structure implied by the Code Edit snippet,
-    // without adding themePlugin() as it's not defined or imported.
-    // If themePlugin() was intended to be added, it would need an import statement.
     ...(process.env.NODE_ENV !== "production" &&
       process.env.REPL_ID !== undefined
       ? [
