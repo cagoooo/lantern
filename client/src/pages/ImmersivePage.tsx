@@ -428,7 +428,12 @@ export default function ImmersivePage() {
                 shadows
                 dpr={[1, 1.5]}
                 camera={{ fov: 75, near: 0.1, far: 200 }}
-                style={{ width: '100%', height: '100%' }}
+                style={{
+                    width: '100%',
+                    height: '100%',
+                    // Modal 開啟時禁用 Canvas 的指標事件，讓點擊可穿透到 Modal
+                    pointerEvents: activeLanternIndex !== null ? 'none' : 'auto',
+                }}
                 onClick={(e) => {
                     // Modal 開啟時不重新鎖定（避免滑鼠又被捕捉）
                     if (activeLanternIndex !== null) return;
@@ -452,6 +457,7 @@ export default function ImmersivePage() {
                                 onPositionUpdate={handlePositionUpdate}
                                 mobileMove={mobileMove}
                                 mobileLook={mobileLook}
+                                modalOpen={activeLanternIndex !== null}
                             />
                         )}
                     </Physics>

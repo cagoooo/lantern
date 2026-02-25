@@ -8,13 +8,14 @@ interface PlayerControllerProps {
     onPositionUpdate: (pos: THREE.Vector3) => void;
     mobileMove?: { dx: number; dy: number };
     mobileLook?: { dx: number; dy: number };
+    modalOpen?: boolean;  // Modal 開啟時停用 PointerLockControls
 }
 
 const SPEED = 5;
 const JUMP_FORCE = 5;
 
 export const PlayerController = forwardRef<{ position: THREE.Vector3 }, PlayerControllerProps>(
-    ({ onPositionUpdate, mobileMove, mobileLook }, ref) => {
+    ({ onPositionUpdate, mobileMove, mobileLook, modalOpen = false }, ref) => {
         const { camera } = useThree();
 
         const [sphereRef, api] = useSphere(() => ({
@@ -107,7 +108,8 @@ export const PlayerController = forwardRef<{ position: THREE.Vector3 }, PlayerCo
         return (
             <>
                 <mesh ref={sphereRef as any} />
-                <PointerLockControls ref={controlsRef} />
+                {/* Modal 開啟時停用 PointerLockControls，避免攔截滑鼠事件 */}
+                <PointerLockControls ref={controlsRef} enabled={!modalOpen} />
             </>
         );
     }
