@@ -87,7 +87,7 @@ export const PlayerController = forwardRef<{ position: THREE.Vector3 }, PlayerCo
             frontVector.set(0, 0, -totalForward);
             sideVector.set(totalStrafe, 0, 0);
             direction
-                .subVectors(frontVector, sideVector)
+                .addVectors(frontVector, sideVector)
                 .normalize()
                 .multiplyScalar(SPEED)
                 .applyEuler(camera.rotation);
