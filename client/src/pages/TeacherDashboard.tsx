@@ -109,13 +109,31 @@ export default function TeacherDashboard() {
     // Create CSV content with BOM for Excel UTF-8 support
     const BOM = "\uFEFF";
     const headers = ["班級", "座號", "姓名", "得分", "通關數", "完成時間"];
+    const formatDate = (val: any) => {
+      if (!val) return "";
+      try {
+        // Handle Firestore Timestamp
+        if (val.toDate && typeof val.toDate === "function") {
+          return val.toDate().toLocaleString();
+        }
+        // Handle Firestore-like object {seconds, nanoseconds}
+        if (val.seconds) {
+          return new Date(val.seconds * 1000).toLocaleString();
+        }
+        const d = new Date(val);
+        return isNaN(d.getTime()) ? "" : d.toLocaleString();
+      } catch {
+        return "";
+      }
+    };
+
     const rows = stats.allScores.map(s => [
       s.className || "",
       s.seatNumber || "",
       s.nickname,
       s.score,
       s.solvedCount,
-      s.createdAt ? new Date(s.createdAt as any).toLocaleString() : ""
+      formatDate(s.createdAt)
     ]);
 
     const csvContent = BOM + [headers, ...rows].map(row => row.join(",")).join("\n");
