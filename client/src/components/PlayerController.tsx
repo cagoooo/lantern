@@ -108,8 +108,7 @@ export const PlayerController = forwardRef<{ position: THREE.Vector3 }, PlayerCo
         return (
             <>
                 <mesh ref={sphereRef as any} />
-                {/* Modal 開啟時停用 PointerLockControls，避免攔截滑鼠事件 */}
-                <PointerLockControls ref={controlsRef} enabled={!modalOpen} />
+                <PointerLockControls ref={controlsRef} />
             </>
         );
     }

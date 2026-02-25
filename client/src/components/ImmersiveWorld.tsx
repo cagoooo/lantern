@@ -255,7 +255,7 @@ export function ImmersiveWorld({
             <Text
                 position={[0, 1.8, -31]}
                 fontSize={0.7}
-                color="rgba(255,200,100,0.8)"
+                color="#FFC864"
                 anchorX="center"
                 anchorY="middle"
             >
