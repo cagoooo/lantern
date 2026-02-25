@@ -319,6 +319,8 @@ export default function ImmersivePage() {
     useEffect(() => {
         const handleKey = (e: KeyboardEvent) => {
             if (e.code === 'KeyE' && nearbyLanternIndex !== null) {
+                // 解除滑鼠鎖定，讓 Modal 可以正常點擊
+                if (document.pointerLockElement) document.exitPointerLock();
                 setActiveLanternIndex(nearbyLanternIndex);
             }
         };
@@ -332,6 +334,8 @@ export default function ImmersivePage() {
     }, []);
 
     const handleLanternInteract = useCallback((index: number) => {
+        // 解除滑鼠鎖定，讓 Modal 的按鈕可以正常點擊
+        if (document.pointerLockElement) document.exitPointerLock();
         setActiveLanternIndex(index);
     }, []);
 
@@ -426,7 +430,8 @@ export default function ImmersivePage() {
                 camera={{ fov: 75, near: 0.1, far: 200 }}
                 style={{ width: '100%', height: '100%' }}
                 onClick={(e) => {
-                    // 點擊空白處鎖定滑鼠（桌機）
+                    // Modal 開啟時不重新鎖定（避免滑鼠又被捕捉）
+                    if (activeLanternIndex !== null) return;
                     (e.target as HTMLElement).requestPointerLock?.();
                 }}
             >
