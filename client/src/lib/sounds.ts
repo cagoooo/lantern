@@ -2,8 +2,28 @@ let audioContext: AudioContext | null = null;
 let bgMusicInterval: ReturnType<typeof setInterval> | null = null;
 let bgMusicGain: GainNode | null = null;
 let isBgMusicPlaying = false;
+let userHasInteracted = false;
 
-function getAudioContext(): AudioContext {
+// 監聽首次使用者互動，解除 AudioContext 自動播放限制
+if (typeof window !== "undefined") {
+  const unlock = () => {
+    userHasInteracted = true;
+    // 若 AudioContext 已建立但被暫停，喚醒它
+    if (audioContext?.state === "suspended") {
+      audioContext.resume();
+    }
+    window.removeEventListener("click", unlock);
+    window.removeEventListener("keydown", unlock);
+    window.removeEventListener("touchstart", unlock);
+  };
+  window.addEventListener("click", unlock, { once: true });
+  window.addEventListener("keydown", unlock, { once: true });
+  window.addEventListener("touchstart", unlock, { once: true, passive: true });
+}
+
+function getAudioContext(): AudioContext | null {
+  // 尚未有使用者互動時，不建立 AudioContext
+  if (!userHasInteracted) return null;
   if (!audioContext) {
     audioContext = new AudioContext();
   }
@@ -13,9 +33,11 @@ function getAudioContext(): AudioContext {
   return audioContext;
 }
 
+
 export function playCorrectSound() {
   try {
     const ctx = getAudioContext();
+    if (!ctx) return;
     const now = ctx.currentTime;
 
     const notes = [523.25, 659.25, 783.99, 1046.5];
@@ -53,6 +75,7 @@ export function playCorrectSound() {
 export function playWrongSound() {
   try {
     const ctx = getAudioContext();
+    if (!ctx) return;
     const now = ctx.currentTime;
 
     const osc = ctx.createOscillator();
@@ -86,6 +109,7 @@ export function playWrongSound() {
 export function playCompletionSound() {
   try {
     const ctx = getAudioContext();
+    if (!ctx) return;
     const now = ctx.currentTime;
 
     const melody = [523.25, 587.33, 659.25, 783.99, 880, 1046.5, 1174.66, 1318.51];
@@ -141,6 +165,7 @@ export function startBgMusic() {
   if (isBgMusicPlaying) return;
   try {
     const ctx = getAudioContext();
+    if (!ctx) return;
     bgMusicGain = ctx.createGain();
     bgMusicGain.gain.setValueAtTime(0.5, ctx.currentTime);
     bgMusicGain.connect(ctx.destination);
@@ -149,17 +174,15 @@ export function startBgMusic() {
     playBgNote(ctx, bgMusicGain);
     bgMusicInterval = setInterval(() => {
       if (bgMusicGain && isBgMusicPlaying) {
-        // Create a more rhythmic pentatonic melody
         const coin = Math.random();
         if (coin > 0.3) {
-          playBgNote(ctx, bgMusicGain);
+          playBgNote(ctx, bgMusicGain!);
         }
 
-        // Occasional double notes (harmony)
         if (coin > 0.7) {
           setTimeout(() => {
             if (bgMusicGain && isBgMusicPlaying) {
-              playBgNote(ctx, bgMusicGain);
+              playBgNote(ctx, bgMusicGain!);
             }
           }, 150);
         }
