@@ -57,6 +57,18 @@ export const PlayerController = forwardRef<{ position: THREE.Vector3 }, PlayerCo
             };
         }, []);
 
+        // 🧹 unmount 清理：移除 PointerLockControls 的 document click handler，避免 WrongDocumentError
+        useEffect(() => {
+            return () => {
+                // 解除指標鎖定
+                if (document.pointerLockElement) document.exitPointerLock();
+                // 呼叫 dispose 清除 PointerLockControls 的 document 層級事件監聽
+                if (controlsRef.current?.dispose) {
+                    try { controlsRef.current.dispose(); } catch { /* 忽略清理錯誤 */ }
+                }
+            };
+        }, []);
+
         useImperativeHandle(ref, () => ({ position: playerPos.current }));
 
         useFrame(() => {

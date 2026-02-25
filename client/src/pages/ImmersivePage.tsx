@@ -319,7 +319,6 @@ export default function ImmersivePage() {
     useEffect(() => {
         const handleKey = (e: KeyboardEvent) => {
             if (e.code === 'KeyE' && nearbyLanternIndex !== null) {
-                // 解除滑鼠鎖定，讓 Modal 可以正常點擊
                 if (document.pointerLockElement) document.exitPointerLock();
                 setActiveLanternIndex(nearbyLanternIndex);
             }
@@ -328,7 +327,36 @@ export default function ImmersivePage() {
         return () => window.removeEventListener('keydown', handleKey);
     }, [nearbyLanternIndex]);
 
-    // 偵測靠近的燈籠（在 Home 原本是在 ImmersiveLantern 內，但這裡集中管理）
+    // 🔑 關鍵：Modal 開啟時確保解除 PointerLock（二次解鎖解決 race condition）
+    useEffect(() => {
+        if (activeLanternIndex === null) return;
+
+        // 立即解鎖
+        if (document.pointerLockElement) document.exitPointerLock();
+
+        // PointerLockControls 的 click handler 會在我們之後執行並重新鎖定
+        // 用 setTimeout 等它執行完再解鎖一次
+        const t1 = setTimeout(() => {
+            if (document.pointerLockElement) document.exitPointerLock();
+        }, 50);
+        const t2 = setTimeout(() => {
+            if (document.pointerLockElement) document.exitPointerLock();
+        }, 150);
+
+        // 監聽 pointerlockchange：如果 Modal 開啟期間又被重新鎖定，立刻解除
+        const onLockChange = () => {
+            if (document.pointerLockElement) document.exitPointerLock();
+        };
+        document.addEventListener('pointerlockchange', onLockChange);
+
+        return () => {
+            clearTimeout(t1);
+            clearTimeout(t2);
+            document.removeEventListener('pointerlockchange', onLockChange);
+        };
+    }, [activeLanternIndex]);
+
+    // 偵測靠近的燈籠
     const handlePositionUpdate = useCallback((pos: THREE.Vector3) => {
         setPlayerPosition(pos.clone());
     }, []);
@@ -397,7 +425,11 @@ export default function ImmersivePage() {
                     solvedCount={gameState.solvedRiddles.length}
                     total={riddles.length}
                     score={gameState.score}
-                    onExit={() => setLocation('/')}
+                    onExit={() => {
+                        // 離開前先解除 PointerLock，再等 PointerLockControls dispose，防止 WrongDocumentError
+                        if (document.pointerLockElement) document.exitPointerLock();
+                        setTimeout(() => setLocation('/'), 80);
+                    }}
                     nearbyLanternIndex={nearbyLanternIndex}
                 />
             )}
