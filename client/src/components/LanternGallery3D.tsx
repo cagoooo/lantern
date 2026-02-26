@@ -76,7 +76,7 @@ interface LanternGallery3DProps {
 }
 
 export function LanternGallery3D({ totalStages, solvedRiddles, currentStage, onSelect, riddles }: LanternGallery3DProps) {
-    const radius = 3.5; // Reduced radius for better fitting
+    const radius = 4.5; // Re-adjusted for balanced atmosphere
 
     const lanternPositions = useMemo(() => {
         return Array.from({ length: totalStages }).map((_, i) => {
@@ -90,7 +90,7 @@ export function LanternGallery3D({ totalStages, solvedRiddles, currentStage, onS
     }, [totalStages]);
 
     return (
-        <div className="w-full aspect-[4/3] md:aspect-video bg-black/10 rounded-3xl overflow-hidden relative border border-[#E8D5B7]/30 shadow-inner">
+        <div className="w-full h-[400px] md:h-[600px] bg-black/10 rounded-3xl overflow-hidden relative border border-[#E8D5B7]/30 shadow-inner">
             <Canvas
                 shadows
                 dpr={[1, 2]}
@@ -100,12 +100,13 @@ export function LanternGallery3D({ totalStages, solvedRiddles, currentStage, onS
                 }}
             >
                 <Suspense fallback={null}>
-                    <PerspectiveCamera makeDefault position={[0, 4, 8]} fov={65} />
+                    <PerspectiveCamera makeDefault position={[0, 4, 10]} fov={50} />
                     <OrbitControls
-                        enablePan={false}
+                        enablePan={true}
                         enableZoom={true}
+                        enableDamping={true}
                         minDistance={5}
-                        maxDistance={12}
+                        maxDistance={15}
                         autoRotate={false}
                         maxPolarAngle={Math.PI / 2.1}
                     />
