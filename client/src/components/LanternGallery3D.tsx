@@ -1,5 +1,5 @@
-import React, { useRef, useState, useMemo, Suspense } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import React, { useRef, useState, useMemo, Suspense, useEffect } from 'react';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Float, Text, PerspectiveCamera, OrbitControls, Environment, ContactShadows } from '@react-three/drei';
 import * as THREE from 'three';
 
@@ -76,7 +76,15 @@ interface LanternGallery3DProps {
 }
 
 export function LanternGallery3D({ totalStages, solvedRiddles, currentStage, onSelect, riddles }: LanternGallery3DProps) {
-    const radius = 4.5; // Re-adjusted for balanced atmosphere
+    const radius = 4.5;
+
+    // Force resize on mount to fix displacement issues often seen in lazy-loaded/hidden containers
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            window.dispatchEvent(new Event('resize'));
+        }, 100);
+        return () => clearTimeout(timer);
+    }, []);
 
     const lanternPositions = useMemo(() => {
         return Array.from({ length: totalStages }).map((_, i) => {
@@ -94,10 +102,8 @@ export function LanternGallery3D({ totalStages, solvedRiddles, currentStage, onS
             <Canvas
                 shadows
                 dpr={[1, 2]}
-                onCreated={({ gl }) => {
-                    // Diagnostic check if THREE properties are being accessed correctly
-                    // console.log("Three Renderer established:", gl.revision);
-                }}
+                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+                className="touch-none"
             >
                 <Suspense fallback={null}>
                     <PerspectiveCamera makeDefault position={[0, 4, 10]} fov={50} />
