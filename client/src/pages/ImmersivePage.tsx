@@ -469,7 +469,9 @@ export default function ImmersivePage() {
                 onClick={(e) => {
                     // Modal 開啟時不重新鎖定（避免滑鼠又被捕捉）
                     if (activeLanternIndex !== null) return;
-                    (e.target as HTMLElement).requestPointerLock?.();
+                    // catch SecurityError（用戶在 lock 完成前退出造成的無害錯誤）
+                    const lock = (e.target as HTMLElement).requestPointerLock?.();
+                    if (lock instanceof Promise) lock.catch(() => { });
                 }}
             >
                 <Suspense fallback={null}>
