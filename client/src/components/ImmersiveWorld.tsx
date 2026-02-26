@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { usePlane, useBox } from '@react-three/cannon';
-import { Text, Sky, Stars, Sparkles } from '@react-three/drei';
+import { Text, Stars } from '@react-three/drei';
 import * as THREE from 'three';
 import { ImmersiveLantern } from './ImmersiveLantern';
 
@@ -246,29 +246,20 @@ export function ImmersiveWorld({
                 intensity={sceneConfig.dirIntensity}
                 color={sceneConfig.dirColor}
                 castShadow
-                shadow-mapSize={[2048, 2048]}
+                shadow-mapSize={[1024, 1024]}
             />
             {/* 場景中央暖光 */}
             <pointLight position={[0, 6, 0]} color="#FF8800" intensity={timePhase === 'day' ? 0.5 : 1.5} distance={25} decay={2} />
 
-            {/* 動態天空背景色 */}
+            {/* 動態天空背景色（輕量版，不用 Sky 著色器） */}
             <color attach="background" args={[sceneConfig.bg]} />
             {sceneConfig.fog && <fog attach="fog" args={[sceneConfig.fog, sceneConfig.fogNear, sceneConfig.fogFar]} />}
 
-            {/* 天空組件 */}
-            <Sky
-                turbidity={sceneConfig.skyTurbidity}
-                rayleigh={sceneConfig.skyRayleigh}
-                sunPosition={sceneConfig.sunPosition}
-            />
-
-            {/* 時域特效 */}
+            {/* 時域特效（沉浸模式精簡版，避免 GPU 過載） */}
             {timePhase === 'night' && <>
                 <NightSky />
                 <FloatingSkyLanterns />
-                <Stars radius={120} depth={60} count={5000} factor={4} saturation={0} fade speed={0.5} />
             </>}
-            {timePhase === 'morning' && <Sparkles count={300} scale={30} size={2} speed={0.4} opacity={0.4} color="#b0d4ff" />}
             {timePhase === 'sunset' && <FloatingSkyLanterns />}
 
             {/* 地板 */}
