@@ -455,11 +455,17 @@ export default function ImmersivePage() {
                 />
             )}
 
-            {/* 3D 場景 */}
+            {/* 3D 場景 - 無陰影模式，減少 GPU 負擔 */}
             <Canvas
-                shadows
-                dpr={[1, 1.5]}
-                camera={{ fov: 75, near: 0.1, far: 200 }}
+                dpr={1}
+                camera={{ fov: 75, near: 0.1, far: 150 }}
+                onCreated={({ gl }) => {
+                    // 自動回復 WebGL Context
+                    gl.domElement.addEventListener('webglcontextlost', (e) => {
+                        e.preventDefault();
+                        setTimeout(() => gl.domElement.dispatchEvent(new Event('webglcontextrestored')), 1000);
+                    });
+                }}
                 style={{
                     width: '100%',
                     height: '100%',

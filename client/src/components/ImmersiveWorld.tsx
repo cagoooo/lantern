@@ -28,7 +28,7 @@ function Floor() {
     }));
 
     return (
-        <mesh ref={ref as any} receiveShadow>
+        <mesh ref={ref as any}>
             <planeGeometry args={[80, 80]} />
             <meshStandardMaterial
                 color="#3a5a3a"
@@ -63,7 +63,7 @@ function Wall({ position, rotation, size }: {
     }));
 
     return (
-        <mesh ref={ref as any} castShadow receiveShadow>
+        <mesh ref={ref as any}>
             <boxGeometry args={size} />
             <meshStandardMaterial color="#B22222" roughness={0.8} metalness={0.1} />
         </mesh>
@@ -245,8 +245,6 @@ export function ImmersiveWorld({
                 position={timePhase === 'day' ? [50, 80, 20] : [10, 30, 10]}
                 intensity={sceneConfig.dirIntensity}
                 color={sceneConfig.dirColor}
-                castShadow
-                shadow-mapSize={[1024, 1024]}
             />
             {/* 場景中央暖光 */}
             <pointLight position={[0, 6, 0]} color="#FF8800" intensity={timePhase === 'day' ? 0.5 : 1.5} distance={25} decay={2} />
