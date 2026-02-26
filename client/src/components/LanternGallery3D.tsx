@@ -55,7 +55,6 @@ function Lantern({ position, index, isSolved, onSelect, isActive }: LanternProps
                 color="white"
                 anchorX="center"
                 anchorY="middle"
-                font="https://fonts.gstatic.com/s/notosanstc/v35/-nF7OG829Oofr2wohFbTp9i1OCk.woff" // Basic Noto Sans TC
             >
                 {index + 1}
             </Text>
