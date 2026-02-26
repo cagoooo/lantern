@@ -23,7 +23,6 @@ export function ImmersiveLantern({
     riddleQuestion,
 }: ImmersiveLanternProps) {
     const groupRef = useRef<THREE.Group>(null);
-    const glowRef = useRef<THREE.PointLight>(null);
     const [hovered, setHovered] = useState(false);
     const wasNearby = useRef(false);   // 追蹤前一幀的靠近狀態，避免重複 callback
 
@@ -42,15 +41,6 @@ export function ImmersiveLantern({
             position[1] + 1.5 + Math.sin(t * 0.8 + riddleIndex * 1.3) * 0.18;
         // 緩慢自轉
         groupRef.current.rotation.y += 0.007;
-
-        // 光暈呼吸
-        if (glowRef.current) {
-            glowRef.current.intensity = isSolved
-                ? 1.2 + Math.sin(t * 2) * 0.2
-                : isNearby
-                    ? 3.5 + Math.sin(t * 4) * 0.8
-                    : 2.0 + Math.sin(t * 1.5) * 0.4;
-        }
 
         // 回報靠近狀態變化給父層（僅在狀態改變時觸發，避免每幀都 setState）
         if (isNearby !== wasNearby.current) {
@@ -85,8 +75,8 @@ export function ImmersiveLantern({
             </mesh>
 
             {/* 燈籠主體 */}
-            <mesh castShadow>
-                <sphereGeometry args={[0.45, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.85]} />
+            <mesh>
+                <sphereGeometry args={[0.45, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.85]} />
                 <meshStandardMaterial
                     color={lanternColor}
                     emissive={emissiveColor}
@@ -97,13 +87,13 @@ export function ImmersiveLantern({
                 />
             </mesh>
 
-            {/* 內部燈光感（半透明球） */}
+            {/* 內部燈光感（高亮半透明球，取代 pointLight） */}
             <mesh>
-                <sphereGeometry args={[0.3, 12, 10]} />
+                <sphereGeometry args={[0.3, 8, 6]} />
                 <meshBasicMaterial
-                    color={isSolved ? '#FFF176' : '#FF8800'}
+                    color={isSolved ? '#FFF176' : (isNearby ? '#FF6600' : '#FF8800')}
                     transparent
-                    opacity={0.3}
+                    opacity={isNearby ? 0.8 : 0.55}
                 />
             </mesh>
 
@@ -130,15 +120,6 @@ export function ImmersiveLantern({
             >
                 {isSolved ? '✓' : `#${riddleIndex + 1}`}
             </Text>
-
-            {/* 光暈 PointLight */}
-            <pointLight
-                ref={glowRef}
-                color={isSolved ? '#FFD700' : '#FF4400'}
-                intensity={2.0}
-                distance={4}
-                decay={2}
-            />
 
             {/* 靠近提示（Billboard 永遠面向玩家） */}
             {isNearby && !isSolved && (
