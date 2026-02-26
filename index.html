@@ -40,7 +40,23 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/lantern/sw.js').catch(() => { });
+        // [Safety Rule] Check if we are on localhost for development
+        const isLocalhost = window.location.hostname === 'localhost' ||
+          window.location.hostname === '127.0.0.1' ||
+          window.location.hostname.includes('::1');
+
+        if (isLocalhost) {
+          // Unregister any existing service workers on localhost to avoid HMR conflicts
+          navigator.serviceWorker.getRegistrations().then(registrations => {
+            for (let registration of registrations) {
+              registration.unregister();
+              console.log('[SW] Unregistered on localhost');
+            }
+          });
+        } else {
+          // Register SW only in production/non-localhost
+          navigator.serviceWorker.register('/lantern/sw.js').catch(() => { });
+        }
       });
     }
   </script>
