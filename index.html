@@ -3,6 +3,16 @@
 
 <head>
   <meta charset="UTF-8" />
+  <!-- 最早執行：吞掉 PointerLock SecurityError，防止 Vite 錯誤彈窗 -->
+  <script>
+    window.addEventListener('unhandledrejection', function (e) {
+      if (e.reason && (e.reason.name === 'SecurityError' ||
+        (typeof e.reason.message === 'string' && e.reason.message.toLowerCase().includes('lock')))) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+      }
+    }, true); // capture phase = 最優先執行
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
   <title>2026 石門國小元宵猜燈謎 | Lantern Festival Riddles</title>
   <meta name="description" content="石門國小2026年元宵節猜燈謎活動 - 一起來猜燈謎，歡慶元宵！" />
@@ -31,7 +41,7 @@
       }
     }(window.location))
   </script> -->
-  <script type="module" crossorigin src="/lantern/assets/index-DvrupEVI.js"></script>
+  <script type="module" crossorigin src="/lantern/assets/index-UwII9Oaw.js"></script>
   <link rel="stylesheet" crossorigin href="/lantern/assets/index-B9CtQ2ew.css">
 </head>
 
