@@ -25,6 +25,7 @@ import {
   playCompletionSound,
   startBgMusic,
   stopBgMusic,
+  updateBgSpeed,
 } from "@/lib/sounds";
 import {
   loadGameState as loadFromFirestore,
@@ -34,6 +35,7 @@ import {
   loadLocalProfile,
   loadStudentProfile,
   submitScore,
+  updateLiveProgress,
   getRiddles,
   checkRiddleAnswer,
   type StudentProfile,
@@ -145,15 +147,25 @@ export default function Home() {
     saveToFirestore(gameState);
   }, [gameState, firebaseLoaded]);
 
-  // Handle BGM initialization
+  // Handle BGM initialization and dynamic speed
   useEffect(() => {
     if (soundEnabled) {
-      startBgMusic();
+      const progress = gameState.solvedRiddles.length / (riddles?.length || 10);
+      const interval = 600 - Math.floor(progress * 400); // 600ms -> 200ms
+      startBgMusic(interval);
+      updateBgSpeed(interval);
     } else {
       stopBgMusic();
     }
     return () => stopBgMusic();
-  }, [soundEnabled]);
+  }, [soundEnabled, gameState.solvedRiddles.length, riddles?.length]);
+
+  // Sync live progress to RTDB
+  useEffect(() => {
+    if (firebaseLoaded && gameState.solvedRiddles.length > 0) {
+      updateLiveProgress(gameState.score, gameState.solvedRiddles.length);
+    }
+  }, [gameState.score, gameState.solvedRiddles.length, firebaseLoaded]);
 
   // 成就系統邏輯 (Achievement System Logic)
   const getTitlesAndBadges = useCallback(() => {

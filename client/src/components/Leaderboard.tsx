@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { getLeaderboard, getClassLeaderboard, type ScoreEntry } from "@/lib/gameStore";
+import { rtdb } from "@/lib/firebase";
+import { ref, onValue } from "firebase/database";
 import { Trophy, Medal, Crown, Users, Loader2 } from "lucide-react";
 
 interface LeaderboardProps {
@@ -17,12 +19,52 @@ export function Leaderboard({ open, onClose }: LeaderboardProps) {
   useEffect(() => {
     if (!open) return;
     setLoading(true);
+
+    // 1. Initial Load from Firestore
     Promise.all([getLeaderboard(50), getClassLeaderboard()])
       .then(([scores, classes]) => {
         setEntries(scores);
         setClassData(classes);
+        setLoading(false);
       })
-      .finally(() => setLoading(false));
+      .catch(() => setLoading(false));
+
+    // 2. Setup Realtime Listener for Live Battle
+    const liveRef = ref(rtdb, "live_leaderboard");
+    const unsubscribe = onValue(liveRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        const liveEntries: ScoreEntry[] = Object.entries(data).map(([uid, val]: [string, any]) => ({
+          uid,
+          ...val,
+          createdAt: val.updatedAt
+        }));
+
+        // Sort and update entries
+        setEntries((prev) => {
+          // Merge live data with existing (or just replace if live is comprehensive)
+          const sorted = liveEntries.sort((a, b) => b.score - a.score || b.solvedCount - a.solvedCount);
+          return sorted.slice(0, 50);
+        });
+
+        // Optional: Update class data in real-time too
+        const newClassData: Record<string, { totalScore: number; count: number; avgScore: number }> = {};
+        liveEntries.forEach(entry => {
+          if (!entry.className) return;
+          if (!newClassData[entry.className]) {
+            newClassData[entry.className] = { totalScore: 0, count: 0, avgScore: 0 };
+          }
+          newClassData[entry.className].totalScore += entry.score;
+          newClassData[entry.className].count += 1;
+        });
+        Object.keys(newClassData).forEach(cls => {
+          newClassData[cls].avgScore = newClassData[cls].totalScore / newClassData[cls].count;
+        });
+        setClassData(newClassData);
+      }
+    });
+
+    return () => unsubscribe();
   }, [open]);
 
   const sortedClasses = Object.entries(classData)

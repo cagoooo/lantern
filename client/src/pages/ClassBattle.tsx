@@ -3,6 +3,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Trophy, Users, Swords, Loader2, Crown, RefreshCw } from "lucide-react";
 import { getClassLeaderboard } from "@/lib/gameStore";
+import { rtdb } from "@/lib/firebase";
+import { ref, onValue } from "firebase/database";
 import { Link } from "wouter";
 import { FestiveDecorations } from "@/components/FestiveUI";
 
@@ -21,6 +23,31 @@ export default function ClassBattle() {
 
   useEffect(() => {
     loadData();
+
+    // Setup Realtime Listener
+    const liveRef = ref(rtdb, "live_leaderboard");
+    const unsubscribe = onValue(liveRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        const liveEntries = Object.values(data) as any[];
+
+        const newClassData: Record<string, { totalScore: number; count: number; avgScore: number }> = {};
+        liveEntries.forEach(entry => {
+          if (!entry.className) return;
+          if (!newClassData[entry.className]) {
+            newClassData[entry.className] = { totalScore: 0, count: 0, avgScore: 0 };
+          }
+          newClassData[entry.className].totalScore += entry.score;
+          newClassData[entry.className].count += 1;
+        });
+        Object.keys(newClassData).forEach(cls => {
+          newClassData[cls].avgScore = newClassData[cls].totalScore / newClassData[cls].count;
+        });
+        setClassData(newClassData);
+      }
+    });
+
+    return () => unsubscribe();
   }, []);
 
   const sorted = Object.entries(classData).sort((a, b) => b[1].totalScore - a[1].totalScore);

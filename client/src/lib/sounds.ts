@@ -3,6 +3,7 @@ let bgMusicInterval: ReturnType<typeof setInterval> | null = null;
 let bgMusicGain: GainNode | null = null;
 let isBgMusicPlaying = false;
 let userHasInteracted = false;
+let currentBpmInterval = 600;
 
 // 監聽首次使用者互動，解除 AudioContext 自動播放限制
 if (typeof window !== "undefined") {
@@ -150,44 +151,90 @@ function playBgNote(ctx: AudioContext, gain: GainNode) {
   const freq = PENTATONIC[Math.floor(Math.random() * PENTATONIC.length)];
   const osc = ctx.createOscillator();
   const noteGain = ctx.createGain();
-  osc.type = Math.random() > 0.5 ? "sine" : "triangle";
-  osc.frequency.setValueAtTime(freq, ctx.currentTime);
+
+  // Mix regular notes with percussion
+  const isPercussion = Math.random() > 0.7;
+
+  if (isPercussion) {
+    // Percussion sound (Snare/Hi-hat style)
+    const noiseBuffer = ctx.createBuffer(1, ctx.sampleRate * 0.1, ctx.sampleRate);
+    const output = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < noiseBuffer.length; i++) {
+      output[i] = Math.random() * 2 - 1;
+    }
+    const noise = ctx.createBufferSource();
+    noise.buffer = noiseBuffer;
+    const noiseFilter = ctx.createBiquadFilter();
+    noiseFilter.type = "highpass";
+    noiseFilter.frequency.value = 5000;
+    noise.connect(noiseFilter);
+    noiseFilter.connect(noteGain);
+    noise.start();
+  } else {
+    osc.type = Math.random() > 0.5 ? "sine" : "triangle";
+    osc.frequency.setValueAtTime(freq, ctx.currentTime);
+    osc.connect(noteGain);
+  }
+
   noteGain.gain.setValueAtTime(0, ctx.currentTime);
-  noteGain.gain.linearRampToValueAtTime(0.04, ctx.currentTime + 0.1);
-  noteGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.5);
-  osc.connect(noteGain);
+  noteGain.gain.linearRampToValueAtTime(isPercussion ? 0.08 : 0.04, ctx.currentTime + 0.01);
+  noteGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + (isPercussion ? 0.1 : 1.5));
+
+  if (!isPercussion) osc.start(ctx.currentTime);
+
   noteGain.connect(gain);
-  osc.start(ctx.currentTime);
-  osc.stop(ctx.currentTime + 1.6);
+  if (!isPercussion) osc.stop(ctx.currentTime + 1.6);
 }
 
-export function startBgMusic() {
-  if (isBgMusicPlaying) return;
+export function updateBgSpeed(bpmInterval: number) {
+  currentBpmInterval = Math.max(150, Math.min(800, bpmInterval));
+  if (isBgMusicPlaying) {
+    // Restart interval with new speed
+    if (bgMusicInterval) clearInterval(bgMusicInterval);
+    const ctx = getAudioContext();
+    if (ctx && bgMusicGain) {
+      startBgLoop(ctx, bgMusicGain);
+    }
+  }
+}
+
+function startBgLoop(ctx: AudioContext, gain: GainNode) {
+  bgMusicInterval = setInterval(() => {
+    if (gain && isBgMusicPlaying) {
+      const coin = Math.random();
+      if (coin > 0.2) {
+        playBgNote(ctx, gain);
+      }
+
+      if (coin > 0.6 && currentBpmInterval > 300) {
+        setTimeout(() => {
+          if (gain && isBgMusicPlaying) {
+            playBgNote(ctx, gain);
+          }
+        }, currentBpmInterval / 4);
+      }
+    }
+  }, currentBpmInterval);
+}
+
+export function startBgMusic(interval = 600) {
+  if (isBgMusicPlaying && interval === currentBpmInterval) return;
+  currentBpmInterval = interval;
   try {
     const ctx = getAudioContext();
     if (!ctx) return;
-    bgMusicGain = ctx.createGain();
-    bgMusicGain.gain.setValueAtTime(0.5, ctx.currentTime);
-    bgMusicGain.connect(ctx.destination);
+
+    if (!bgMusicGain) {
+      bgMusicGain = ctx.createGain();
+      bgMusicGain.gain.setValueAtTime(0.5, ctx.currentTime);
+      bgMusicGain.connect(ctx.destination);
+    }
+
     isBgMusicPlaying = true;
+    if (bgMusicInterval) clearInterval(bgMusicInterval);
 
     playBgNote(ctx, bgMusicGain);
-    bgMusicInterval = setInterval(() => {
-      if (bgMusicGain && isBgMusicPlaying) {
-        const coin = Math.random();
-        if (coin > 0.3) {
-          playBgNote(ctx, bgMusicGain!);
-        }
-
-        if (coin > 0.7) {
-          setTimeout(() => {
-            if (bgMusicGain && isBgMusicPlaying) {
-              playBgNote(ctx, bgMusicGain!);
-            }
-          }, 150);
-        }
-      }
-    }, 600);
+    startBgLoop(ctx, bgMusicGain);
   } catch { }
 }
 

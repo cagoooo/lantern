@@ -9,7 +9,8 @@ import {
   getDocs,
   serverTimestamp,
 } from "firebase/firestore";
-import { db, ensureAuth, getCurrentUid, auth } from "./firebase";
+import { db, rtdb, ensureAuth, getCurrentUid, auth } from "./firebase";
+import { ref, set as setRtdb, onValue } from "firebase/database";
 import { signInWithEmailAndPassword, signOut } from "firebase/auth";
 import type { GameState } from "@shared/schema";
 import { getRiddles as getLocalRiddles, checkRiddleAnswer as checkLocalRiddleAnswer } from "./riddles";
@@ -152,6 +153,26 @@ export interface ScoreEntry {
   createdAt: unknown;
 }
 
+export async function updateLiveProgress(
+  score: number,
+  solvedCount: number
+): Promise<void> {
+  try {
+    const uid = getCurrentUid();
+    if (!uid) return;
+    const profile = loadLocalProfile();
+
+    const liveRef = ref(rtdb, `live_leaderboard/${uid}`);
+    await setRtdb(liveRef, {
+      nickname: profile?.nickname || "未填姓名",
+      className: profile?.className || "",
+      score,
+      solvedCount,
+      updatedAt: Date.now()
+    });
+  } catch { }
+}
+
 export async function submitScore(
   score: number,
   solvedCount: number,
@@ -162,13 +183,17 @@ export async function submitScore(
   try {
     const uid = await ensureAuth();
     const profile = loadLocalProfile();
+    const nickname = profile?.nickname || "未填姓名";
+    const className = profile?.className || "";
+    const seatNumber = profile?.seatNumber || "";
 
+    // 1. Save to Firestore (Permanent Storage)
     const docRef = doc(db, COLLECTION_SCORES, uid);
     await setDoc(docRef, {
       uid,
-      nickname: profile?.nickname || "未填姓名",
-      className: profile?.className || "",
-      seatNumber: profile?.seatNumber || "",
+      nickname,
+      className,
+      seatNumber,
       score,
       solvedCount,
       totalTime: totalTime ?? null,
@@ -176,7 +201,12 @@ export async function submitScore(
       badges: badges || [],
       createdAt: serverTimestamp(),
     });
-  } catch { }
+
+    // 2. Also update live progress to ensure consistency
+    await updateLiveProgress(score, solvedCount);
+  } catch (err) {
+    console.error("Score submission error:", err);
+  }
 }
 
 export async function getLeaderboard(max = 1000): Promise<ScoreEntry[]> {
