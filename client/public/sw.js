@@ -41,6 +41,9 @@ self.addEventListener('fetch', (event) => {
 
   if (event.request.method !== 'GET') return;
 
+  // [Safety Rule] Only handle http/https requests to avoid 'chrome-extension' errors
+  if (!url.protocol.startsWith('http')) return;
+
   // Don't cache HMR or Vite internal files in development
   if (url.pathname.includes('@vite') || url.pathname.includes('@fs') || url.pathname.includes('vite-hmr') || url.pathname.includes('/src/') || url.pathname.includes('node_modules')) {
     return;
