@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { usePlane, useBox } from '@react-three/cannon';
-import { Text } from '@react-three/drei';
+import { Text, Sky, Stars, Sparkles } from '@react-three/drei';
 import * as THREE from 'three';
 import { ImmersiveLantern } from './ImmersiveLantern';
 
@@ -180,6 +180,45 @@ export function ImmersiveWorld({
     onLanternInteract,
     onLanternNearby,
 }: ImmersiveWorldProps) {
+    // Dynamic Time System
+    const timePhase = useMemo(() => {
+        const now = new Date();
+        const time = now.getHours() + now.getMinutes() / 60;
+        if (time >= 5 && time < 8.5) return 'morning';
+        if (time >= 8.5 && time < 16.5) return 'day';
+        if (time >= 16.5 && time < 19) return 'sunset';
+        return 'night';
+    }, []);
+
+    const sceneConfig = useMemo(() => {
+        switch (timePhase) {
+            case 'morning': return {
+                bg: '#1a2a4a', ambientColor: '#b0c4de', ambientIntensity: 0.4,
+                dirColor: '#c5d8f0', dirIntensity: 0.6,
+                fog: '#1e304f', fogNear: 20, fogFar: 60,
+                skyTurbidity: 10, skyRayleigh: 4, sunPosition: [50, 10, 50] as any,
+            };
+            case 'day': return {
+                bg: '#4488cc', ambientColor: '#ffffff', ambientIntensity: 0.9,
+                dirColor: '#fffaf0', dirIntensity: 1.5,
+                fog: null, fogNear: 40, fogFar: 100,
+                skyTurbidity: 0.2, skyRayleigh: 0.5, sunPosition: [100, 100, 20] as any,
+            };
+            case 'sunset': return {
+                bg: '#2a1a0a', ambientColor: '#ff8c40', ambientIntensity: 0.5,
+                dirColor: '#ff7a20', dirIntensity: 0.9,
+                fog: '#3d1f0a', fogNear: 20, fogFar: 55,
+                skyTurbidity: 5, skyRayleigh: 10, sunPosition: [100, 2, -100] as any,
+            };
+            default: return { // night
+                bg: '#050510', ambientColor: '#1a1a3f', ambientIntensity: 0.15,
+                dirColor: '#b0c4de', dirIntensity: 0.3,
+                fog: '#0a0a1f', fogNear: 30, fogFar: 70,
+                skyTurbidity: 20, skyRayleigh: 2, sunPosition: [0, -10, 0] as any,
+            };
+        }
+    }, [timePhase]);
+
     // 計算燈籠位置（依據謎題數量）
     const lanternPositions = useMemo(() => {
         return riddles.map((_, i) => {
@@ -199,26 +238,38 @@ export function ImmersiveWorld({
 
     return (
         <>
-            {/* 環境光 */}
-            <ambientLight intensity={0.15} color="#1a1a3f" />
-            {/* 月光 */}
+            {/* 動態環境光 */}
+            <ambientLight intensity={sceneConfig.ambientIntensity} color={sceneConfig.ambientColor} />
+            {/* 主要方向光（太陽/月光） */}
             <directionalLight
-                position={[10, 30, 10]}
-                intensity={0.3}
-                color="#b0c4de"
+                position={timePhase === 'day' ? [50, 80, 20] : [10, 30, 10]}
+                intensity={sceneConfig.dirIntensity}
+                color={sceneConfig.dirColor}
                 castShadow
                 shadow-mapSize={[2048, 2048]}
             />
-            {/* 場景中央燈光 */}
-            <pointLight position={[0, 6, 0]} color="#FF8800" intensity={1.5} distance={25} decay={2} />
+            {/* 場景中央暖光 */}
+            <pointLight position={[0, 6, 0]} color="#FF8800" intensity={timePhase === 'day' ? 0.5 : 1.5} distance={25} decay={2} />
 
-            {/* 天空顏色 */}
-            <color attach="background" args={['#050510']} />
-            <fog attach="fog" args={['#0a0a1f', 30, 70]} />
+            {/* 動態天空背景色 */}
+            <color attach="background" args={[sceneConfig.bg]} />
+            {sceneConfig.fog && <fog attach="fog" args={[sceneConfig.fog, sceneConfig.fogNear, sceneConfig.fogFar]} />}
 
-            {/* 夜空元素 */}
-            <NightSky />
-            <FloatingSkyLanterns />
+            {/* 天空組件 */}
+            <Sky
+                turbidity={sceneConfig.skyTurbidity}
+                rayleigh={sceneConfig.skyRayleigh}
+                sunPosition={sceneConfig.sunPosition}
+            />
+
+            {/* 時域特效 */}
+            {timePhase === 'night' && <>
+                <NightSky />
+                <FloatingSkyLanterns />
+                <Stars radius={120} depth={60} count={5000} factor={4} saturation={0} fade speed={0.5} />
+            </>}
+            {timePhase === 'morning' && <Sparkles count={300} scale={30} size={2} speed={0.4} opacity={0.4} color="#b0d4ff" />}
+            {timePhase === 'sunset' && <FloatingSkyLanterns />}
 
             {/* 地板 */}
             <Floor />
