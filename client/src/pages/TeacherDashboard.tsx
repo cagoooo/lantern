@@ -128,17 +128,13 @@ export default function TeacherDashboard() {
     };
 
     const rows = filteredStudents.map(s => {
-      const titlesStr = s.titles ? s.titles.join(";") : "";
-      const badgesStr = s.badges ? s.badges.join(";") : "";
       return [
-        s.nickname,
         s.className || "",
         s.seatNumber || "",
+        s.nickname,
         s.score,
         s.solvedCount,
         s.totalTime || 0,
-        `"${(s as any).titles ? (s as any).titles.join(";") : ""}"`,
-        `"${(s as any).badges ? (s as any).badges.join(";") : ""}"`
       ].join(",");
     }).join("\n");
 
