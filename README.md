@@ -1,5 +1,7 @@
 # lantern
 
+🌐 **線上使用：[元宵猜燈謎闖關遊戲](https://cagoooo.github.io/lantern/)**
+
 元宵猜燈謎
 
 <!-- BEGIN:PROJECT_GUIDE -->
@@ -11,7 +13,7 @@
 - Repository：`cagoooo/lantern`
 - 可見性：公開
 - 主要技術：TypeScript、React、Vite、Three.js、Firebase、Tailwind CSS、Express
-- 線上入口：未在 GitHub repository metadata 設定
+- 線上入口：<https://cagoooo.github.io/lantern/>
 
 ### 可以怎麼應用
 
