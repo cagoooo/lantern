@@ -280,7 +280,7 @@ export default function QuestionBank() {
           <p className="text-sm text-[#8B4513]/60 mt-3">
             © 2026 石門國小元宵猜燈謎網站 🏮{" "}
             <a
-              href="https://www.smes.tyc.edu.tw/modules/tadnews/page.php?ncsn=11&nsn=16#a5"
+              href="https://www.smes.tyc.edu.tw/modules/school/index.php?department_id=2&zone_id=0&page_id=2&content_id=11&type=news&from_op=all_news#a5"
               target="_blank"
               rel="noopener noreferrer"
               className="font-bold text-[#E60012] underline hover:text-[#CC0010] transition-colors"
