@@ -1,4 +1,4 @@
-const CACHE_NAME = 'shimen-riddle-v3.3.0';
+const CACHE_NAME = 'shimen-riddle-v3.6.2';
 const API_CACHE = 'shimen-api-v1';
 
 const STATIC_ASSETS = [
