@@ -1,5 +1,9 @@
-const CACHE_NAME = 'shimen-riddle-v3.6.2';
+// 同一網域（cagoooo.github.io）的所有工具共用快取空間，只能清除自己這個前綴的快取
+const CACHE_PREFIX = 'shimen-riddle-';
+const CACHE_NAME = 'shimen-riddle-v3.6.3';
 const API_CACHE = 'shimen-api-v1';
+// 本站自己用過的舊 API 快取名稱（API_CACHE 改版時把舊名稱加進來）
+const OLD_API_CACHES = [];
 
 const STATIC_ASSETS = [
   '/lantern/',
@@ -28,7 +32,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((names) => {
       return Promise.all(
         names
-          .filter((name) => name !== CACHE_NAME && name !== API_CACHE)
+          .filter((name) => (name.startsWith(CACHE_PREFIX) || OLD_API_CACHES.includes(name)) && name !== CACHE_NAME && name !== API_CACHE)
           .map((name) => caches.delete(name))
       );
     })
