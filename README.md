@@ -2,7 +2,7 @@
 
 🌐 **線上使用：[元宵猜燈謎闖關遊戲](https://cagoooo.github.io/lantern/)**
 
-> 📌 **目前版本：v3.6.2**（依據 `package.json`）
+> 📌 **目前版本：v3.6.3**（依據 `package.json`）
 
 元宵猜燈謎
 
