@@ -1,6 +1,6 @@
 // 同一網域（cagoooo.github.io）的所有工具共用快取空間，只能清除自己這個前綴的快取
 const CACHE_PREFIX = 'shimen-riddle-';
-const CACHE_NAME = 'shimen-riddle-v3.6.3';
+const CACHE_NAME = 'shimen-riddle-v3.6.4';
 const API_CACHE = 'shimen-api-v1';
 // 本站自己用過的舊 API 快取名稱（API_CACHE 改版時把舊名稱加進來）
 const OLD_API_CACHES = [];
