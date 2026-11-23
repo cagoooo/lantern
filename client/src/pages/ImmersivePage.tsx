@@ -298,7 +298,8 @@ export default function ImmersivePage() {
     const [solvedAnswers, setSolvedAnswers] = useState<Record<number, string>>({});
     const [showTutorial, setShowTutorial] = useState(true);
     const [mobileMove, setMobileMove] = useState({ dx: 0, dy: 0 });
-    const [mobileLook, setMobileLook] = useState({ dx: 0, dy: 0 });
+    // 視角滑動量：累積「待消耗」的位移，由 PlayerController 每幀消耗後歸零（用 ref，避免每次 touchmove 重繪）
+    const mobileLookRef = useRef({ dx: 0, dy: 0 });
     const [isLoading, setIsLoading] = useState(true);
 
     // 載入謎題和遊戲狀態
@@ -357,7 +358,11 @@ export default function ImmersivePage() {
     }, [activeLanternIndex]);
 
     // 偵測靠近的燈籠
+    const lastPlayerPos = useRef(new THREE.Vector3(0, 1, 0));
     const handlePositionUpdate = useCallback((pos: THREE.Vector3) => {
+        // 位置變化超過 5 公分才更新（互動距離為 3 公尺），避免每個物理步驟都重繪整頁
+        if (pos.distanceToSquared(lastPlayerPos.current) < 0.0025) return;
+        lastPlayerPos.current.copy(pos);
         setPlayerPosition(pos.clone());
     }, []);
 
@@ -451,7 +456,7 @@ export default function ImmersivePage() {
             {!showTutorial && (
                 <VirtualJoystick
                     onMove={setMobileMove}
-                    onLook={(dx, dy) => setMobileLook({ dx, dy })}
+                    onLook={(dx, dy) => { mobileLookRef.current.dx += dx; mobileLookRef.current.dy += dy; }}
                 />
             )}
 
@@ -491,7 +496,7 @@ export default function ImmersivePage() {
                             <PlayerController
                                 onPositionUpdate={handlePositionUpdate}
                                 mobileMove={mobileMove}
-                                mobileLook={mobileLook}
+                                mobileLook={mobileLookRef.current}
                                 modalOpen={activeLanternIndex !== null}
                             />
                         )}

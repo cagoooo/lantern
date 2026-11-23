@@ -33,14 +33,14 @@ export function ImmersiveLantern({
     );
     const isNearby = distToPlayer < INTERACT_DISTANCE;
 
-    useFrame((state) => {
+    useFrame((state, delta) => {
         if (!groupRef.current) return;
         const t = state.clock.getElapsedTime();
         // 上下浮動
         groupRef.current.position.y =
             position[1] + 1.5 + Math.sin(t * 0.8 + riddleIndex * 1.3) * 0.18;
         // 緩慢自轉
-        groupRef.current.rotation.y += 0.007;
+        groupRef.current.rotation.y += 0.007 * 60 * delta;  // 與更新率無關（60Hz 下等於每幀 0.007）
 
         // 回報靠近狀態變化給父層（僅在狀態改變時觸發，避免每幀都 setState）
         if (isNearby !== wasNearby.current) {

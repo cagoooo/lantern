@@ -99,21 +99,22 @@ export const PlayerController = forwardRef<{ position: THREE.Vector3 }, PlayerCo
 
             frontVector.set(0, 0, -totalForward);
             sideVector.set(totalStrafe, 0, 0);
-            direction
-                .addVectors(frontVector, sideVector)
-                .normalize()
-                .multiplyScalar(SPEED)
-                .applyEuler(camera.rotation);
+            direction.addVectors(frontVector, sideVector);
+            // 長度超過 1（鍵盤斜向、鍵盤加搖桿）才正規化；輕推搖桿保留比例速度
+            if (direction.lengthSq() > 1) direction.normalize();
+            direction.multiplyScalar(SPEED).applyEuler(camera.rotation);
 
             api.velocity.set(direction.x, velocity.current[1], direction.z);
 
-            // 手機視角（當 PointerLock 未啟用時）
+            // 手機視角（當 PointerLock 未啟用時）：消耗一次累積的滑動量後歸零，手指不動就不轉
             if (mobileLook && (mobileLook.dx !== 0 || mobileLook.dy !== 0)) {
                 camera.rotation.y -= mobileLook.dx;
                 camera.rotation.x = Math.max(
                     -Math.PI / 3,
                     Math.min(Math.PI / 3, camera.rotation.x - mobileLook.dy)
                 );
+                mobileLook.dx = 0;
+                mobileLook.dy = 0;
             }
         });
 
